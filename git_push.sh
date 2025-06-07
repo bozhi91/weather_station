@@ -1,6 +1,6 @@
 #!/bin/sh
 
-echo Pushing files to repository...\n
+echo Pushing files to repository...
 
 git add --all
 git commit -m "New features"
