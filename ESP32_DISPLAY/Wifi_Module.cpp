@@ -3,6 +3,10 @@
 #include <SPI.h>
 #include <HTTPClient.h>
 #include "Wifi_Module.h"
+#include "display.h"
+#include "API.h"
+
+static unsigned char wifi_status = 0;
 
 /**
   Initialize the WIFI module.
@@ -12,24 +16,40 @@
 */
 void initWifi(void){
 
-  const char* ssid     = "vodafoneBA1840";
-  const char* password = "6GMJ4TSTUGXH6LHQ";
-  unsigned long timer = millis();
+  const char* ssid     = "";
+  const char* password = "";
+  unsigned long timer  = millis();
+  Config conf;
 
-  Serial.printf(" \n- Initializing WIFI module. Connecting to: %s \n", ssid);
+  getConfig(&conf);
+
+  wifi_status = 0;
+
+  Serial.printf(" \n- Initializing WIFI module. Connecting to: %s \n", conf.ssid);
 
   //Initialize wifi module and connect to the specified Access Point
-  WiFi.begin(ssid, password);
+  WiFi.begin(conf.ssid, conf.pass);
 
   //Wait until we're connected to the Wifi AP or a 5s timeout has passed
   while(WiFi.status() != WL_CONNECTED && ((millis() - timer) < 5000));
 
-  if(WiFi.status() != WL_CONNECTED){
+  if(WiFi.status() != WL_CONNECTED){    
+    msgBox("CONNECTION PROBLEM ", TYPE_ERROR);
     Serial.printf("\t [ FAILED ] \n");
     return;
   }
+  wifi_status = 1;
 
-  remoteConnCheck();
+  //Verify if we have an Internet connection and get the local IP
+  String ip = WiFi.localIP().toString();
+
+  char code = remoteConnCheck();
+  Serial.printf("Local IP: %s. Internet connection: %s \n", ip.c_str(), (code == 204) ? "YES":"NO");
+
+  //We're connected to the internet
+  if(code == 204){
+    wifi_status = 2;
+  }
 }
 
 /*
@@ -37,17 +57,31 @@ void initWifi(void){
 */
 char remoteConnCheck(void){
 
-  //Verify if we have an Internet connection and get the local IP
-  String ip = WiFi.localIP().toString();
-
-  if (WiFi.status() != WL_CONNECTED) return false;
-
   HTTPClient http;
   http.begin("http://clients3.google.com/generate_204"); // Fast & lightweight URL
   int code = http.GET();
   http.end();
 
-  Serial.printf(" - Connected! Local IP: %s. Internet connection: %s \n", ip.c_str(), (code == 204) ? "YES":"NO");
+  return code; // 204 means success, no content
+}
 
-  return (code == 204); // 204 means success, no content
+int getHttpData(char* url, char* outData){
+
+  HTTPClient http;
+
+  http.begin(url);            //Connect to the specified URL
+  int httpCode = http.GET();  //Get the server response
+  
+  if (httpCode <=0) {
+    Serial.printf("HTTP GET failed, error: %s\n", http.errorToString(httpCode).c_str());
+    httpCode;
+  }
+
+  String payload = http.getString();
+  Serial.println("Received payload:");
+  Serial.println(payload);
+  
+  http.end(); //Close the HTTP connection
+
+  return httpCode;
 }

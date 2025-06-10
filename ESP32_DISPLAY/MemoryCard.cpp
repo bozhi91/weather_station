@@ -11,6 +11,7 @@
   
   https://www.flaticon.com/free-icons/weather
 */
+  static char sdCardStatus = 0;
 
   const  char* mem_card_type[] = {  
     "CARD_NONE",
@@ -46,14 +47,18 @@ char initSDCard(void){
   Serial.printf("- SD Card Used Space: %llu MB \n", SD.usedBytes()/(1024*1024));
   Serial.printf("- SD Card Free Space: %llu MB \n\n", cardSize - (SD.usedBytes()/(1024*1024)));
 
-  //sd_listDir(SD, "/", 0);
-  /*loadPNG("/cloud.png", 20, 50);
-  loadPNG("/rain.png", 90, 50);
-  loadPNG("/part_cloud_2.png", 160, 50);
-  loadPNG("/night.png", 230, 50);
-  loadPNG("/rain.png", 300, 50);*/
+  sdCardStatus = 1;
 
   return 0;
+}
+
+/*
+  Returns the current SD card status
+  0: Not mounted/not found
+  1: Installed and works properly
+*/
+char sd_Status(void){
+  return sdCardStatus;
 }
 
 /*
@@ -64,13 +69,13 @@ char initSDCard(void){
   - fileBuffer: Pointer to the destination buffer we want to store the file to.
   - fSize: Size of the file in bytes.
 */
-int fread(const char *path, unsigned char* fileBuffer, unsigned long* fSize){
+int fread(const char *path, unsigned char* fileBuffer, unsigned long* fSize, bool isBinary){
   
-  fs::FS &fs = SD;
+  toggleDisplay(0);
 
-  File file = fs.open(path, "rb");
+  File file  = SD.open(path);
 
-  if (!file) {
+  if(!file){
     Serial.printf("Failed to open file : %s \n", path);
     return -1;
   }
@@ -80,12 +85,17 @@ int fread(const char *path, unsigned char* fileBuffer, unsigned long* fSize){
   *fSize = fileSize;
   file.read(fileBuffer, fileSize);
   file.close();
+  
+  toggleDisplay(1);
 
-  Serial.printf("File loaded: %s(%d)bytes \n", path, fSize);  
+  if(!isBinary) {
+    fileBuffer[fileSize] = '\0';  // Null-terminate
+  }
+
+  Serial.printf("File loaded: %s(%d)bytes \n", path, fileSize);  
 
   return 0;
 }
-
 
 static void sd_listDir(fs::FS &fs, const char *dirname, uint8_t levels) {
 

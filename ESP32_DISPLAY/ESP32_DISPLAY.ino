@@ -8,28 +8,28 @@
 void setup() {
   
   Serial.begin(9600);
-  while (!Serial && millis() < 3000); 
+  //while (!Serial && millis() < 3000); 
 
-  Serial.println();
   Serial.printf(" \n\n ========== ESP32 WEATHER STATION ========== \n");
- 
+  Serial.println("Copyright: Bozhidar, 05/2025. Ver: 1.0");
+  
   printCpuInfo();
 
-  initWifi();
-  initDisplay();
-  initSDCard();
-  displayLayout();
+  initSDCard();   //Install the SD card driver
+  loadConfig();   //Loads the device config from a JSON file
+  initDisplay();  //Install and configure the display
 
-  //drawColorBitmap(sun, 100, 200, 24, 24);
-  //drawColorBitmap(antena, 150, 200, 24, 24);
- //drawColorBitmap(antena, 150, 200, 42, 51);
+  if(!sd_Status()){
+    msgBox("SD CARD NOT FOUND!", TYPE_ERROR);
+    return;
+  }
 
-  //tft.setScrollMargins(0,300);
-  //tft.scrollTo(100);
+  initWifi();    //Initialize the wifi module
+  loadLayout(1);  //Initializes the main Layout 
 }
 
 void loop() {
-  //displayLayout();
+  //updateLayout();
   //readAPI();
   delay(100);
 }

@@ -12,14 +12,22 @@ void print_chip_info(void);
 
 void printCpuInfo(void){
 
-  Serial.printf("ESP IDF-Version: %d.%d.%d \n", ESP_IDF_VERSION_MAJOR, ESP_IDF_VERSION_MINOR, ESP_IDF_VERSION_PATCH);
+  /*Serial.printf("ESP IDF-Version: %d.%d.%d \n", ESP_IDF_VERSION_MAJOR, ESP_IDF_VERSION_MINOR, ESP_IDF_VERSION_PATCH);
   Serial.printf("ESP-IDF-Version: %s \n",esp_get_idf_version());
-  
+  */
   Serial.printf(" -> Reset reason: %d \n", esp_reset_reason());
-  
+
+  if(esp_reset_reason() == ESP_RST_PANIC){
+
+    Serial.println(" RESET DUE TO PANIC. SYSTEM HALTED!!!!");
+
+    while(1);
+  }
+
+  /*
   print_detailed_heap_info();
   print_memory_info();
-  print_chip_info();
+  print_chip_info();*/
 }
 
 void print_detailed_heap_info(void) {
