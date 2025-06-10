@@ -117,9 +117,41 @@ void displayDailyIcon(GFXcanvas16& canvas_id, Current_weather* current, int x, i
   char data_buff[10];
 
   //Load and display the icon
-  //if(current->cond_id == 1003){
-    strcpy(icon_name, "/part_cloud.png");
-  
+  switch(current->cond_id){
+    
+    case 1000:
+      strcpy(icon_name, "/sunny.png");
+    break;
+
+    case 1003:
+      strcpy(icon_name, "/part_cloud.png");
+    break;
+
+    case 1006:
+    case 1009:
+      strcpy(icon_name, "/cloudy_2.png");
+    break;
+
+    case 1030:
+    case 1135:
+    case 1147:
+      strcpy(icon_name, "/fog?@.png");
+    break;
+
+    case 1063:
+    case 1180:
+    case 1183:
+    case 1186:
+    case 1189:
+    case 1192:
+    case 1195:
+      strcpy(icon_name, "/rain_3.png");
+    break;
+
+    default:
+      strcpy(icon_name, "/part_cloud.png");
+  }
+    
   loadPNG(canvas_id, icon_name, CANVAS_W/2-32, 10);
 
   //Display the weather data: temp(min/max), day of the week
