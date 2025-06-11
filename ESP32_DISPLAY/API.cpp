@@ -51,7 +51,7 @@ int loadConfig(void){
   return 0;
 }
 
-void readTimeAPI(char* result){
+void readTimeAPI(DateTime* result){
 
   size_t resultSize = 100;
 
@@ -61,15 +61,19 @@ void readTimeAPI(char* result){
     return;
   }*/
 
-  const char* timeAPI = "https://timeapi.io/api/time/current/zone?timeZone=Europe/Madrid";
+  const char* timeAPI = "https://timeapi.io/api/time/current/zone?timeZone=Europe%2FMadrid";
 
+  Serial.println(" -> Requesting time API...");
+
+  /** Download json data from the server **/
   HTTPClient http;
   http.begin(timeAPI);
   int httpCode = http.GET();
 
   if (httpCode <= 0) {
+
     Serial.printf("HTTP GET failed, error: %s\n", http.errorToString(httpCode).c_str());
-    snprintf(result, resultSize, "HTTP error");
+   // snprintf(result, resultSize, "HTTP error");
     http.end();
     return;
   }
@@ -80,6 +84,7 @@ void readTimeAPI(char* result){
   Serial.println("Received payload:");
   Serial.println(payload);
 
+  /*** Parse the received json datadata **/
   // Use a safe default capacity (or adjust if you parse more fields)
   DynamicJsonDocument doc(4096);
 
@@ -87,17 +92,19 @@ void readTimeAPI(char* result){
   if (error) {
     Serial.print("deserializeJson() failed: ");
     Serial.println(error.f_str());
-    snprintf(result, resultSize, "JSON error");
+    //snprintf(result, resultSize, "JSON error");
     return;
   }
 
-  const char* dateTime = doc["dateTime"];
-  if (!dateTime) {
-    snprintf(result, resultSize, "Field missing");
-    return;
-  }
+  /*** Validate the data and store each field into the data structure ***/
+  strncpy(result->date, doc["date"], 10);
+  strncpy(result->time, doc["time"], 5);
+  //result->date[12] = 0;
 
-  snprintf(result,17, "%s", dateTime);
+  Serial.printf("time: %s[%s] \n",doc["time"], result->time);
+
+
+  strcpy(result->weekday, doc["dayOfWeek"]);
 }
 
 void readWeatherAPI(Current_weather* current){
@@ -110,6 +117,8 @@ void readWeatherAPI(Current_weather* current){
 
   char* API_URL = "https://api.weatherapi.com/v1/forecast.json?key=86a605c5ebbd4c40a09135726210410&q=Barcelona&lang=en&dt=2025-06-";
   char url[256];
+
+   Serial.println(" -> Requesting weather API...");
 
   sprintf(url, "%s%s", API_URL,current->date);
 
@@ -124,6 +133,7 @@ void readWeatherAPI(Current_weather* current){
   }
 
   String payload = http.getString();
+  Serial.printf("payload: %s \n ", payload);
 
   // Allocate JSON buffer
   const size_t capacity = JSON_OBJECT_SIZE(2) + JSON_OBJECT_SIZE(4) + JSON_OBJECT_SIZE(10) + 600;

@@ -21,7 +21,7 @@ void printCpuInfo(void){
 
     Serial.println(" RESET DUE TO PANIC. SYSTEM HALTED!!!!");
 
-    while(1);
+    while(1);//todo: software reset
   }
 
   /*

@@ -2,23 +2,33 @@
 #ifndef __DISPLAY_MODULE__
 #define __DISPLAY_MODULE__
 
-    #include <Adafruit_GFX.h>
-    #include "API.h"
+  #include <Adafruit_GFX.h>
+  #include "API.h"
+  #include <Adafruit_ST7796S_kbv.h>
 
     #define DISPLAY_WIDTH   480
     #define DISPLAY_HEIGHT  320
 
-    const uint16_t  Display_Color_Black        = 0x0000;
-    const uint16_t  Display_Color_Blue         = 0x001F;
-    const uint16_t  Display_Color_Red          = 0xF800;
-    const uint16_t  Display_Color_Green        = 0x07E0;
-    const uint16_t  Display_Color_Cyan         = 0x07FF;
-    const uint16_t  Display_Color_Magenta      = 0xF81F;
-    const uint16_t  Display_Color_Yellow       = 0xFFE0;
-    const uint16_t  Display_Color_White        = 0xFFFF;
-    const uint16_t  Display_Color_Grey         = 0x6B6D;
-    
+    #define CANVAS_X  50
+    #define CANVAS_Y  150
 
+    #define CANVAS_W  100
+    #define CANVAS_H  140
+
+    #define MSG_BOX_X  40
+    #define MSG_BOX_Y  90
+    #define MSG_BOX_H  50
+
+    const uint16_t  Display_Color_Black   = 0x0000;
+    const uint16_t  Display_Color_Blue    = 0x001F;
+    const uint16_t  Display_Color_Red     = 0xF800;
+    const uint16_t  Display_Color_Green   = 0x07E0;
+    const uint16_t  Display_Color_Cyan    = 0x07FF;
+    const uint16_t  Display_Color_Magenta = 0xF81F;
+    const uint16_t  Display_Color_Yellow  = 0xFFE0;
+    const uint16_t  Display_Color_White   = 0xFFFF;
+    const uint16_t  Display_Color_Grey    = 0x6B6D;
+    
     typedef enum{
       TYPE_NONE,
       TYPE_OK,
@@ -27,10 +37,12 @@
 
     void initDisplay(void);
     void toggleDisplay(bool state);
+    GFXcanvas16* getCanvas(void);
+    Adafruit_ST7796S_kbv* getDisplayInstance();
 
     //Text funcitons
     void printText(String text, int pos_x, int pos_y);
-    void printTextEx(String text, int pos_x, int pos_y, unsigned short color);
+    void printTextEx(String text, int size, int pos_x, int pos_y, unsigned short color);
     void printTextCanvas(GFXcanvas16& canvas_id, String text, int pos_x, int pos_y, unsigned short color);
 
     //Layout funcitons
@@ -41,12 +53,14 @@
     void drawColorBitmap(const unsigned short image[], int posX, int posY, int sizeX, int sizeY);
     void drawBitmap(unsigned char startX, unsigned char  startY, unsigned char width, unsigned char  height, const unsigned char* bitmap, int nBytes, unsigned short color);
     void drawRGBLine(const unsigned short buffer[], int start_X, int start_Y, unsigned int nBytes);
+    void display_FillRect(int x, int y, int w, int h, unsigned short color);
 
     //Image and canvas funcitons
     void displayDailyIcon( GFXcanvas16& canvas_id, Current_weather* current, int x, int y);
     void drawToCanvas( GFXcanvas16& canvas_id, int16_t x, int16_t y, const uint16_t bitmap[], int16_t w, int16_t h);
     void canvasToScreen( GFXcanvas16& canvas_id, int at_x, int at_y);
     void loadPNG( GFXcanvas16& canvas_id, const char* fileName, int at_x, int at_y);
+    
     
 const unsigned int antena[] PROGMEM={
   /*

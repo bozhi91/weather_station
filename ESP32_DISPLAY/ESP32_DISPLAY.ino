@@ -4,6 +4,7 @@
 #include "display.h"
 #include "MemoryCard.h"
 #include "hardware.h"
+#include "Layout.h"
 
 void setup() {
   
@@ -23,13 +24,16 @@ void setup() {
     msgBox("SD CARD NOT FOUND!", TYPE_ERROR);
     return;
   }
-
+ 
   initWifi();    //Initialize the wifi module
-  loadLayout(1);  //Initializes the main Layout 
+  loadLayout(0); //Initializes the main Layout 
 }
 
 void loop() {
-  //updateLayout();
-  //readAPI();
-  delay(100);
+
+  Serial.println("Refreshing data....");
+  loadLayout(1);
+
+  delay(30000);
 }
+

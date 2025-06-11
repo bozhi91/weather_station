@@ -7,23 +7,10 @@
 #include "hardware.h"
 #include "MemoryCard.h"
 #include "API.h"
-
-#define CANVAS_X  50
-#define CANVAS_Y  150
-
-#define CANVAS_W  100
-#define CANVAS_H  140
-
-#define MSG_BOX_X  40
-#define MSG_BOX_Y  90
-#define MSG_BOX_H  50
+#include "Layout.h"
 
 Adafruit_ST7796S_kbv tft = Adafruit_ST7796S_kbv(TFT_CS, TFT_DC, TFT_RST);
 GFXcanvas16 canvas_icon(CANVAS_W, CANVAS_H); //100x120x2 = 24 KB
-
-void displayMainLayout(void);
-void displayHomeLayout(void);
-void displayTimeDate(void);
 
 void initDisplay(void){
 
@@ -32,140 +19,24 @@ void initDisplay(void){
   tft.begin(62500000); //62.5mhz
   tft.setRotation(3);
   tft.fillScreen(COLOR_BLACK);
-  
-  loadLayout(0);
+
   Serial.printf("\t [ DONE ] \n");
 }
-
-//Layout manager. Loads layout to the screen by given 'id'
-void loadLayout(int id){
-
-  if(id == 0){
-    tft.fillScreen(COLOR_BLACK);
-    displayMainLayout();  //init display main layout
-  }
-  else if(id == 1){
-    displayHomeLayout(); //init home layout
-  }
-}
-
-void displayMainLayout(void){
-  tft.drawRoundRect(5, 5, DISPLAY_WIDTH-10, DISPLAY_HEIGHT-10, 5, Display_Color_Yellow);
-  msgBox("INITIALIZING, PLEASE WAIT...", TYPE_OK);
-}
-
-void displayHomeLayout(void){
-
-  //Display daily icon data. 
-  //We use the same method and canvas memory for all the icons of hte week. Including the today's forecast icon.
-  //We just change the icon parmeters and coordinates. Then we copy the canvas back to the screen.
-  Current_weather current[5];
-
-  memset(current, 0, sizeof(current));
-
-  strcpy(current[0].date, "10");
-  readWeatherAPI(&current[0]);
-
-  strcpy(current[1].date, "11");
-  readWeatherAPI(&current[1]);
-
-  strcpy(current[2].date, "12");
-  readWeatherAPI(&current[2]);
-
-  strcpy(current[3].date, "13");
-  readWeatherAPI(&current[3]);
-
-  msgBox("", TYPE_NONE);
-  
-  displayDailyIcon(canvas_icon, &current[0], 30, 150);
-  displayDailyIcon(canvas_icon, &current[1], 140 ,150);
-  displayDailyIcon(canvas_icon, &current[2], 250 ,150);
-  displayDailyIcon(canvas_icon, &current[3], 360 ,150);
-
-  //displayDailyIcon(canvas_icon, &current[3], 360 , 20);
-
- /* displayDailyIcon(canvas_icon, "/sunny.png",  140 ,150);
-  displayDailyIcon(canvas_icon, "/rain_3.png", 250 ,150);
-  displayDailyIcon(canvas_icon, "/wind.png",   360 ,150);*/
-
-  //TODO: display toolbar and other components
-  displayTimeDate();
-}
-
-void displayTimeDate(void){
-
-  char timme_buff[50];
-  memset(timme_buff, 0, sizeof timme_buff);
-  readTimeAPI(timme_buff);
-  printTextEx(timme_buff, 50, 50, Display_Color_Yellow);
-}
-
-/***  
-  Display the weather icon with some basic data on the canvas
-  then copy the canvas memory to the display memory at given coordinates.
+/**
+  Toggle the display command line by changing the CS(chip select) pin state.
+  -> LOW is enabled!
 */
-void displayDailyIcon(GFXcanvas16& canvas_id, Current_weather* current, int x, int y){
+void toggleDisplay(bool state){
+  digitalWrite(TFT_CS, !state);
+  delay(10);
+}
 
-  Serial.printf(" T: %d, %d, %d \n", current->max_temp, current->min_temp, current->cond_id);
+Adafruit_ST7796S_kbv* getDisplayInstance(void) {
+  return &tft;
+}
 
-  //Display icon frame
-  canvas_id.fillScreen(Display_Color_Black);
-  canvas_id.drawRoundRect(0, 0, CANVAS_W, CANVAS_H-20, 5, Display_Color_Blue);
-  canvas_id.drawLine(10, 80, CANVAS_W-10, 80, Display_Color_Blue);
- 
-  char icon_name[20];
-  char data_buff[10];
-
-  //Load and display the icon
-  switch(current->cond_id){
-    
-    case 1000:
-      strcpy(icon_name, "/sunny.png");
-    break;
-
-    case 1003:
-      strcpy(icon_name, "/part_cloud.png");
-    break;
-
-    case 1006:
-    case 1009:
-      strcpy(icon_name, "/cloudy_2.png");
-    break;
-
-    case 1030:
-    case 1135:
-    case 1147:
-      strcpy(icon_name, "/fog?@.png");
-    break;
-
-    case 1063:
-    case 1180:
-    case 1183:
-    case 1186:
-    case 1189:
-    case 1192:
-    case 1195:
-      strcpy(icon_name, "/rain_3.png");
-    break;
-
-    default:
-      strcpy(icon_name, "/part_cloud.png");
-  }
-    
-  loadPNG(canvas_id, icon_name, CANVAS_W/2-32, 10);
-
-  //Display the weather data: temp(min/max), day of the week
-  memset(data_buff, 0, sizeof data_buff);
-  sprintf(data_buff,"%dC|%dC", current->max_temp, current->min_temp);
-  printTextCanvas(canvas_id, data_buff, 5, 90, COLOR_YELLOW);
-
-  //Display day of the week
-  memset(data_buff, 0, sizeof data_buff);
-  sprintf(data_buff,"%s", current->date);
-  printTextCanvas(canvas_id, data_buff, CANVAS_W/2-32, 125, COLOR_WHITE);
-
-  //Copy canvas memory to screen
-  canvasToScreen(canvas_id, x, y);
+GFXcanvas16* getCanvas(void){
+  return &canvas_icon;
 }
 
 /**
@@ -198,7 +69,7 @@ void msgBox(const char* text,  MSG_BOX_TYPES type){
   tft.drawRoundRect(MSG_BOX_X, MSG_BOX_Y, len, MSG_BOX_H, 5, Display_Color_Blue);
 
   // Draw the text
-  printTextEx(text, MSG_BOX_X + padding, 105, type == TYPE_OK ? Display_Color_Black : Display_Color_Red);
+  printTextEx(text,2,  MSG_BOX_X + padding, 105, type == TYPE_OK ? Display_Color_Black : Display_Color_Red);
 
   // Save current length for next erase
   prev_len = len;
@@ -226,7 +97,6 @@ void drawToCanvas(GFXcanvas16& canvas_id, int16_t x, int16_t y, const uint16_t b
 }
 
 /************************ GUI FUNCTIONS ********************************/
-
 /**
   Read a PNG file from the SD card and display it on the screen.
   The image is converted to RGB565 format since the display works with this color format only.
@@ -280,15 +150,8 @@ void loadPNG( GFXcanvas16& canvas_id, const char* fileName, int at_x, int at_y){
   }
 }
 
-/**
-  Toggle the display command line by changing the CS(chip select) pin state.
-  
-  - LOW is enabled!
-*/
-void toggleDisplay(bool state){
+void display_FillRect(int x, int y, int w, int h, unsigned short color){
 
-  digitalWrite(TFT_CS, !state);
-  delay(10);
 }
 
 void printText(String text, int pos_x, int pos_y) {
@@ -299,11 +162,11 @@ void printText(String text, int pos_x, int pos_y) {
   tft.println(text);
 }
 
-void printTextEx(String text, int pos_x, int pos_y, unsigned short color) {
+void printTextEx(String text, int size ,int pos_x, int pos_y, unsigned short color) {
 
   tft.setCursor(pos_x, pos_y);
   tft.setTextColor(color);
-  tft.setTextSize(2);
+  tft.setTextSize(size);
   tft.println(text);
 }
 
