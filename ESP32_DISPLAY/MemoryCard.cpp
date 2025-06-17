@@ -11,7 +11,7 @@
   
   https://www.flaticon.com/free-icons/weather
 */
-  static char sdCardStatus = 0;
+  static int sdCardStatus = 0;
 
   const  char* mem_card_type[] = {  
     "CARD_NONE",
@@ -25,19 +25,28 @@ static void sd_listDir(fs::FS &fs, const char *dirname, uint8_t levels);
 
 char initSDCard(void){
 
-  Serial.println(" - Initializing SD card...");
+  Serial.print(" - Initializing SD card... \t\t");
+  sdCardStatus = 0;
 
+  /** Initialize the SD card driver. 
+      Assign the SD card with the SPI bus. Use the default parameteres:
+      - Frequency: 4MHz
+      - Mount point: /SD
+   **/
   if (!SD.begin(SD_CS)) {
-    Serial.println(" FAILED ");
-    return -1;
+    Serial.println(" [ FAILED ] \n");
+    sdCardStatus = -1;
+    return sdCardStatus;
   }
 
+  /** Check the card type */
   int8_t cardType = SD.cardType();
-  Serial.println(" - SD Card driiver initialized!");
+  Serial.println(" [ DONE ] \n");
 
   if(cardType == CARD_NONE) {
     Serial.println("No SD card attached!");
-    return -2;
+    sdCardStatus = -2;
+    return sdCardStatus;
   }
 
   Serial.printf("\n === SD Card Info=== \n\n");
@@ -47,17 +56,16 @@ char initSDCard(void){
   Serial.printf("- SD Card Used Space: %llu MB \n", SD.usedBytes()/(1024*1024));
   Serial.printf("- SD Card Free Space: %llu MB \n\n", cardSize - (SD.usedBytes()/(1024*1024)));
 
-  sdCardStatus = 1;
-
-  return 0;
+  return sdCardStatus;
 }
 
 /*
   Returns the current SD card status
-  0: Not mounted/not found
-  1: Installed and works properly
+  -1: Driver not installed
+  -2: SD card not found
+   0: Installed and works properly
 */
-char sd_Status(void){
+int sd_Status(void){
   return sdCardStatus;
 }
 

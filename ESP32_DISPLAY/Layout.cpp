@@ -74,12 +74,11 @@ void displayHomeLayout(void){
 */
 void displayTimeDate(void){
 
-  //char timme_buff[50];
+  //https://api.api-ninjas.com/v1/timezone?timezone=Europe/London
   DateTime time = {0};
 
   memset(&time, 0, sizeof time);
   readTimeAPI(&time);
-  
   msgBox("", TYPE_NONE);
 
   displInst->fillRect(40, 30, 340,80, COLOR_BLACK);

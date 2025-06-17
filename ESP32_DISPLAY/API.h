@@ -39,5 +39,6 @@
     
     int loadConfig(void);
     void getConfig(Config* conf);
-
+    void shell(void);
+    
 #endif

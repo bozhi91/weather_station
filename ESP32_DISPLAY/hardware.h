@@ -12,6 +12,6 @@
     #define TFT_RST   17 // RST can be set to -1 if you tie it to Arduino's reset
 
     void printCpuInfo(void);
-
+    void halt(void);
 
 #endif
