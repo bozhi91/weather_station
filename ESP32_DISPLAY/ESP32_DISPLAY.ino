@@ -5,6 +5,7 @@
 #include "MemoryCard.h"
 #include "hardware.h"
 #include "Layout.h"
+#include "LayoutComponents.h"
 
 static void bootScreen(void);
 
@@ -38,7 +39,7 @@ void setup() {
   Serial.begin(115200);
   while (!Serial && millis() < 3000); 
 
-  bootScreen();
+ // bootScreen();
 
   /** INITIALIZE PERIPHERAL DEVICES ***/
   initDisplay();  //Install and configure the display
@@ -46,27 +47,42 @@ void setup() {
   
   if(sd_Status()<0){
     msgBox("SD CARD NOT FOUND!", TYPE_ERROR);
-   // halt();
+    halt();
   }
- 
-  while(1){
+  
+  //Initialize the graphic components
+  layoutInitializer();
+  setCurrentLayout(LAYOUT_HOME);
+  delay(500); 
 
-    shell();
-
-    //Serial.println("TASK...");
-    delay(250);
-  }
-
-  loadConfig();   //Loads the device config from a JSON file
-  initWifi();     //Initialize the wifi module
-  loadLayout(0);  //Initializes the main Layout 
+  //loadConfig(); //Loads the device config from a JSON file
+  //initWifi();   //Initialize the wifi module
 }
 
 void loop() {
 
-  Serial.println("Refreshing data....");
-  //loadLayout(1);
+  static int progress = 0;
+  
+  callLayoutController();
+  delay(1000);
+/*
+  setCurrentLayout(LAYOUT_HOME);
+  delay(500);
+  
+  callLayoutController();
+  delay(3000);
+  
+  setCurrentLayout(LAYOUT_INFO);
+  delay(500);*/
 
-  delay(30000);
+ /* progressBar(progress);
+  delay(500);
+  progress+=5;*/
+
+  //progress = (progress<100) ? progress+5 : 0;
+  //loadLayout(LAYOUT_HOME);  //Initializes the main Layout 
+
+  //delay(3000);
+  //loadLayout(LAYOUT_INFO);
 }
 

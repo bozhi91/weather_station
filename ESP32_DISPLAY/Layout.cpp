@@ -1,38 +1,118 @@
 #include "Adafruit_ST7796S_kbv.h"
  
 #include "Layout.h"
+#include "infoLayout.h"
 #include "API.h"
 #include "display.h"
+#include "LayoutComponents.h"
+
 #include <Adafruit_GFX.h>
 
-static Adafruit_ST7796S_kbv* displInst = getDisplayInstance();
-static GFXcanvas16* canvasInst         =  getCanvas();
+//Define the local functions used to draw the basic layout components
+static void _drawLayoutLabel(TextLabel text_label);
+static void _drawLayoutShape(Shape shape);
+static void _drawLayoutBMP(Image bmp);
 
-//Layout manager. Loads layout to the screen by given 'id'
-void loadLayout(int id){
-  
+
+/***************************************  LAYOUT DEFINITIONS  ***************************************/
+
+//This array holds all the available layouts. Any new layout should be placed here.
+//The layout view/controller definition goes to its corresponding .cpp file 
+LayoutList myLayoutList[] = {
+
+    {  _viewHomeLayout, _controllHomeLayout  },
+    {  _viewInfoLayout, _controllInfoLayout  }
+};
+
+static Adafruit_ST7796S_kbv* displInst = getDisplayInstance();
+static GFXcanvas16* canvasInst         = getCanvas();
+static int currentLayoutId             = 0;
+
+/***************************************  LOCAL FUNCTIONS  ***************************************/
+
+/*
+  Stores the ID of the current layout.
+  Laods the view of the layout
+*/
+void setCurrentLayout(int layoutId){
+
+  currentLayoutId = layoutId;
+  myLayoutList[currentLayoutId].layoutView();
+}
+
+/**Call the controller of the current layout. 
+  This will modify the values of the layout components, labels, icons, etc.
+**/
+void callLayoutController(void){
+  myLayoutList[currentLayoutId].layoutCtrl();
+}
+
+//Initialize the graphic components and the default layout
+void layoutInitializer(void){
+
+  //Get the display and canvas instance
   if(displInst == 0){
     displInst  = getDisplayInstance();
     canvasInst = getCanvas();
   }
 
-  if(id == 0){
-    displInst->fillScreen(COLOR_BLACK);
-    displayMainLayout();  //init display main layout
+  setCurrentLayout(LAYOUT_INFO);
+
+  //displClrScreen();
+  //Toolbar(icons_list);
+}
+
+//Layout manager. Loads layout(by a given template) to the screen
+void loadLayout(LayoutTemplate* layout, int size, int clrScr){
+  
+  if(clrScr){
+    displClrScreen();
   }
-  else if(id == 1){
-    displayHomeLayout(); //init home layout
+
+  //Read the GuiElements[] array list and display the elements one by one
+  for(int i=0; i<size; i++){
+
+    switch(layout[i].type){
+  
+      case TYPE_LABEL:
+        _drawLayoutLabel(layout[i].text);
+      break;
+
+      case TYPE_RECTANGLE:
+        _drawLayoutShape(layout[i].shape);
+      break;
+
+      case TYPE_BITMAP:
+        _drawLayoutBMP(layout[i].bmp);
+      break;
+    }
   }
 }
 
-/**
-  Draw display frame, toolbar and other static components.
-  This components are usually visible in all of the layouts
-*/
-void displayMainLayout(void){
+/**** DISPLAY THE LAYOUT BASIC COMPONENTS: SHAPE, LABEL, BUTTOM, BITMAP, ETC... *****/
+static void _drawLayoutShape(Shape shape){
+  displInst->drawRoundRect(shape.pos_x, shape.pos_y,shape.end_x, shape.end_y, 5, shape.color);
+}
 
-  displInst->drawRoundRect(5, 5, DISPLAY_WIDTH-10, DISPLAY_HEIGHT-10, 5, Display_Color_Yellow);
-  msgBox("INITIALIZING, PLEASE WAIT...", TYPE_OK);
+static void _drawLayoutLabel(TextLabel item){
+
+  static int len = 0;
+  int resize = 3; //text resize
+
+  //Delete the previous text before drawing the new one
+  if(len != 0){
+    int width  = len*(CHAR_W+1)*resize;
+    int height = (CHAR_H+1)*resize; 
+    
+    displInst->fillRoundRect(item.pos_x, item.pos_y, width, height, 5, COLOR_BLACK);
+  }
+
+  len = strlen(item.label);
+  printTextEx(item.label, resize, item.pos_x, item.pos_y, item.color);
+}
+
+static void _drawLayoutBMP(Image bmp){
+  drawMonochromeBitmap(bmp.pos_x, bmp.pos_y, bmp.width, bmp.height, bmp.bitmap, sizeof(bmp.size), bmp.color, COLOR_BLACK);
 }
 
 static char day[2];
@@ -63,100 +143,10 @@ void displayHomeLayout(void){
   sprintf(current[3].date, "%d", d);
   readWeatherAPI(&current[3]);
 
-  displayDailyIcon(*canvasInst, &current[0], 30, 150);
-  displayDailyIcon(*canvasInst, &current[1], 140 ,150);
-  displayDailyIcon(*canvasInst, &current[2], 250 ,150);
-  displayDailyIcon(*canvasInst, &current[3], 360 ,150);
+  displayIcon(*canvasInst, &current[0], 30, 150);
+  displayIcon(*canvasInst, &current[1], 140 ,150);
+  displayIcon(*canvasInst, &current[2], 250 ,150);
+  displayIcon(*canvasInst, &current[3], 360 ,150);
 }
 
-/***
-  Display the time and date in format: dd/mm/YY - HH:mm:ss(12/24 hour format)
-*/
-void displayTimeDate(void){
-
-  //https://api.api-ninjas.com/v1/timezone?timezone=Europe/London
-  DateTime time = {0};
-
-  memset(&time, 0, sizeof time);
-  readTimeAPI(&time);
-  msgBox("", TYPE_NONE);
-
-  displInst->fillRect(40, 30, 340,80, COLOR_BLACK);
-  printTextEx(time.time, 4, 40, 30, Display_Color_Yellow);
-  printTextEx(time.date, 4, 40, 70, Display_Color_Yellow);
-  
-  Serial.printf("Date: %s:%s \n", time.date, time.time);
-
-
-  day[0] = time.date[3];
-  day[1] = time.date[4];
-}
-
-/***  
-  Display the weather icon with some basic data on the canvas
-  then copy the canvas memory to the display memory at given coordinates.
-*/
-void displayDailyIcon(GFXcanvas16& canvas_id, Current_weather* current, int x, int y){
-
-  Serial.printf(" T: %d, %d, %d \n", current->max_temp, current->min_temp, current->cond_id);
-
-  //Display icon frame
-  canvas_id.fillScreen(Display_Color_Black);
-  canvas_id.drawRoundRect(0, 0, CANVAS_W, CANVAS_H-20, 5, Display_Color_Blue);
-  canvas_id.drawLine(10, 80, CANVAS_W-10, 80, Display_Color_Blue);
- 
-  char icon_name[20];
-  char data_buff[10];
-
-  //Load and display the icon
-  switch(current->cond_id){
-    
-    case 1000:
-      strcpy(icon_name, "/sunny.png");
-    break;
-
-    case 1003:
-      strcpy(icon_name, "/part_cloud.png");
-    break;
-
-    case 1006:
-    case 1009:
-      strcpy(icon_name, "/cloudy_2.png");
-    break;
-
-    case 1030:
-    case 1135:
-    case 1147:
-      strcpy(icon_name, "/fog?@.png");
-    break;
-
-    case 1063:
-    case 1180:
-    case 1183:
-    case 1186:
-    case 1189:
-    case 1192:
-    case 1195:
-      strcpy(icon_name, "/rain_3.png");
-    break;
-
-    default:
-      strcpy(icon_name, "/part_cloud.png");
-  }
-    
-  loadPNG(canvas_id, icon_name, CANVAS_W/2-32, 10);
-
-  //Display the weather data: temp(min/max), day of the week
-  memset(data_buff, 0, sizeof data_buff);
-  sprintf(data_buff,"%dC|%dC", current->max_temp, current->min_temp);
-  printTextCanvas(canvas_id, data_buff, 5, 90, COLOR_YELLOW);
-
-  //Display day of the week
-  memset(data_buff, 0, sizeof data_buff);
-  sprintf(data_buff,"%s", current->date);
-  printTextCanvas(canvas_id, data_buff, CANVAS_W/2-32, 125, COLOR_WHITE);
-
-  //Copy canvas memory to screen
-  canvasToScreen(canvas_id, x, y);
-}
 

@@ -4,6 +4,7 @@
 #include <HTTPClient.h>
 #include "Wifi_Module.h"
 #include "display.h"
+#include "LayoutComponents.h"
 #include "API.h"
 
 static unsigned char wifi_status = 0;
@@ -22,7 +23,7 @@ void initWifi(void){
   Config conf;
 
   getConfig(&conf);
-
+  
   wifi_status = 0;
 
   Serial.printf(" \n- Initializing WIFI module. Connecting to: %s \n", conf.ssid);
@@ -31,7 +32,7 @@ void initWifi(void){
   WiFi.begin(conf.ssid, conf.pass);
 
   //Wait until we're connected to the Wifi AP or a 5s timeout has passed
-  while(WiFi.status() != WL_CONNECTED && ((millis() - timer) < 5000));
+  while(WiFi.status() != WL_CONNECTED && ((millis() - timer) < 10000));
 
   if(WiFi.status() != WL_CONNECTED){    
     msgBox("CONNECTION PROBLEM ", TYPE_ERROR);
