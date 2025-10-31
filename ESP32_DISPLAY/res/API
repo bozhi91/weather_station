@@ -1,0 +1,18 @@
+
+- Time api
+https://docs.anedya.io/device/api/http-time-sync/
+
+- Api 2
+curl --request GET \
+     --url https://r1-api.dotdigital.com/v2/server-time \
+     --header 'accept: text/plain'
+
+- API 3
+https://docs.kraken.com/api/docs/rest-api/get-server-time/
+
+https://ipgeolocation.io/timezone-api.html
+
+https://developers.google.com/maps/documentation/timezone/overview
+
+
+
