@@ -51,12 +51,10 @@ void setup() {
   }
   
   //Initialize the graphic components
-  layoutInitializer();
-  setCurrentLayout(LAYOUT_HOME);
-  delay(500); 
+  setCurrentLayout(LAYOUT_INFO);
 
-  //loadConfig(); //Loads the device config from a JSON file
-  //initWifi();   //Initialize the wifi module
+  loadConfig(); //Loads the device config from a JSON file
+  initWifi();   //Initialize the wifi module
 }
 
 void loop() {
@@ -65,6 +63,7 @@ void loop() {
   
   callLayoutController();
   delay(1000);
+
 /*
   setCurrentLayout(LAYOUT_HOME);
   delay(500);

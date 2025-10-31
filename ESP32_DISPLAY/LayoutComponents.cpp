@@ -106,7 +106,6 @@ void drawColorBitmap(const unsigned short image[], int posX, int posY, int sizeX
   }
 }
 
-
 /**
   Read a PNG file from the SD card and display it on the screen.
   The image is converted to RGB565 format since the display works with this color format only.
@@ -195,6 +194,36 @@ void drawToCanvas(GFXcanvas16& canvas_id, int16_t x, int16_t y, const uint16_t b
 
 
 /************************ GUI FUNCTIONS ********************************/
+
+
+void _drawLayoutBMP(Image bmp){
+  drawMonochromeBitmap(bmp.pos_x, bmp.pos_y, bmp.width, bmp.height, bmp.bitmap, sizeof(bmp.size), bmp.color, COLOR_BLACK);
+}
+
+
+/**** DISPLAY THE LAYOUT BASIC COMPONENTS: SHAPE, LABEL, BUTTOM, BITMAP, ETC... *****/
+void _drawLayoutShape(Shape shape){
+  getDisplayInstance()->drawRoundRect(shape.pos_x, shape.pos_y,shape.end_x, shape.end_y, 5, shape.color);
+}
+
+
+void _drawLayoutLabel(TextLabel item){
+
+  static int len = 0;
+  int resize = 3; //text resize
+
+  //Delete the previous text before drawing the new one
+  if(len != 0){
+    int width  = len*(CHAR_W+1)*resize;
+    int height = (CHAR_H+1)*resize;
+
+    getDisplayInstance()->fillRoundRect(item.pos_x, item.pos_y, width, height, 5, COLOR_BLACK);
+  }
+
+  len = strlen(item.label);
+  printTextEx(item.label, resize, item.pos_x, item.pos_y, item.color);
+}
+
 /**
   Display a text box at coords: 100,100 inside a yeallow frame
 */

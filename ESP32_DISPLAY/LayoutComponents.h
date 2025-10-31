@@ -34,4 +34,8 @@
     void displayTimeDate(void);
     void displayToolbar(Image iconList[]);
 
+    void _drawLayoutBMP(Image bmp);
+    void _drawLayoutShape(Shape shape);
+    void _drawLayoutLabel(TextLabel item);
+
 #endif
