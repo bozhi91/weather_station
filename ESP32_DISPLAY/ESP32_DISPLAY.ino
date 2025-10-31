@@ -62,7 +62,7 @@ void loop() {
   static int progress = 0;
   
   callLayoutController();
-  delay(1000);
+  delay(200);
 
 /*
   setCurrentLayout(LAYOUT_HOME);

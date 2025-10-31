@@ -5,5 +5,7 @@
 
     void initWifi(void);
     char remoteConnCheck(void);
+    int getHttpData(char* url, char* outData);
+    int getConnStatus(void);
 
 #endif

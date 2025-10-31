@@ -2,6 +2,13 @@
 - Time api
 https://docs.anedya.io/device/api/http-time-sync/
 
+curl -L 'https://device.ap-in-1.anedya.io/v1/time' \
+-H 'Content-Type: application/json' \
+-H 'Accept: application/json' \
+-d '{
+  "deviceSendTime": 0
+}'
+
 - Api 2
 curl --request GET \
      --url https://r1-api.dotdigital.com/v2/server-time \

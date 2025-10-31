@@ -5,10 +5,12 @@
 #include "display.h"
 #include "MemoryCard.h"
 #include "hardware.h"
+#include "Wifi_Module.h"
 
 //https://randomnerdtutorials.com/esp32-http-get-post-arduino/
 
 static Config config;
+static DateTime_Cfg date_time_cfg = { 1, 0, 0 }; //TODO: load this config from the JSON file
 
 void getConfig(Config* conf){
   *conf = config;
@@ -19,24 +21,24 @@ void getConfig(Config* conf){
 */
 int loadConfig(void){
   
-  unsigned char json_buffer[512];
-  unsigned long size = 0;
+    unsigned char json_buffer[512];
+    unsigned long size = 0;
 
-  memset(json_buffer, 0, sizeof(json_buffer));
-  fread("/config.json", json_buffer, &size, 0);
+    memset(json_buffer, 0, sizeof(json_buffer));
+    fread("/config.json", json_buffer, &size, 0);
 
-  StaticJsonDocument<256> doc;
-  DeserializationError error = deserializeJson(doc, json_buffer);
+    StaticJsonDocument<256> doc;
+    DeserializationError error = deserializeJson(doc, json_buffer);
 
-  if (error) {
-    Serial.print(F("deserializeJson() failed: "));
-    Serial.println(error.c_str());
-    return -1;
-  }
+    if (error) {
+      Serial.print(F("deserializeJson() failed: "));
+      Serial.println(error.c_str());
+      return -1;
+    }
 
-  //Copy strings safely
-  strlcpy(config.ssid, doc["ssid"] | "", sizeof(config.ssid));
-  strlcpy(config.pass, doc["pass"] | "", sizeof(config.pass));
+    //Copy strings safely
+    strlcpy(config.ssid, doc["ssid"] | "", sizeof(config.ssid));
+    strlcpy(config.pass, doc["pass"] | "", sizeof(config.pass));
     
     /*strlcpy(config.lang, doc["lang"] | "", sizeof(config.lang));
     strlcpy(config.timezone, doc["timezone"] | "", sizeof(config.timezone));
@@ -52,60 +54,28 @@ int loadConfig(void){
   return 0;
 }
 
-void readTimeAPI(DateTime* result){
+/*
+    Returns a struct with the time/date values recovered from an external server.
+    Time format is in UTC.
+    The date/time format returned by the server has the following form: yyyy-mm-ddThh:mm:ss
+    The date/time is formatted acording the
+*/
+void readTimeAPI(DateTime* date){
 
-  size_t resultSize = 100;
+  char response[64];
+  char* timeAPI = "https://r1-api.dotdigital.com/v2/server-time";
+  //"https://timeapi.io/api/time/current/zone?timeZone=Europe%2FMadrid";
 
-  /*if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("WiFi not connected!");
-    snprintf(result, resultSize, "WiFi error");
-    return;
-  }*/
+  getHttpData(timeAPI, response);
+  Serial.printf("API Response: [%s]", response);
 
-  const char* timeAPI = "https://timeapi.io/api/time/current/zone?timeZone=Europe%2FMadrid";
+  //TODO: Need to format and validate the datra properly. Apply the corresponding timezone, etc.
 
-  Serial.println(" -> Requesting time API...");
+  memcpy(date->date, &response[1], 10);
+  memcpy(date->time, &response[12], 8);
 
-  /** Download json data from the server **/
-  HTTPClient http;
-  http.begin(timeAPI);
-  int httpCode = http.GET();
+  //date->time[1]+=date_time_cfg.timezone;
 
-  if (httpCode <= 0) {
-
-    Serial.printf("HTTP GET failed, error: %s\n", http.errorToString(httpCode).c_str());
-   // snprintf(result, resultSize, "HTTP error");
-    http.end();
-    return;
-  }
-
-  String payload = http.getString();
-  http.end();
-
-  Serial.println("Received payload:");
-  Serial.println(payload);
-
-  /*** Parse the received json datadata **/
-  // Use a safe default capacity (or adjust if you parse more fields)
-  DynamicJsonDocument doc(4096);
-
-  DeserializationError error = deserializeJson(doc, payload);
-  if (error) {
-    Serial.print("deserializeJson() failed: ");
-    Serial.println(error.f_str());
-    //snprintf(result, resultSize, "JSON error");
-    return;
-  }
-
-  /*** Validate the data and store each field into the data structure ***/
-  strncpy(result->date, doc["date"], 10);
-  strncpy(result->time, doc["time"], 5);
-  //result->date[12] = 0;
-
-  Serial.printf("time: %s[%s] \n",doc["time"], result->time);
-
-
-  strcpy(result->weekday, doc["dayOfWeek"]);
 }
 
 void readWeatherAPI(Current_weather* current){

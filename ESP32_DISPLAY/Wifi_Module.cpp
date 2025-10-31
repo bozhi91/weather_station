@@ -23,7 +23,6 @@ void initWifi(void){
   Config conf;
 
   getConfig(&conf);
-  
   wifi_status = 0;
 
   Serial.printf(" \n- Initializing WIFI module. Connecting to: %s \n", conf.ssid);
@@ -53,12 +52,17 @@ void initWifi(void){
   }
 }
 
+int getConnStatus(void){
+  return wifi_status;
+}
+
 /*
   Check if we have an internet connection.
 */
 char remoteConnCheck(void){
 
   HTTPClient http;
+
   http.begin("http://clients3.google.com/generate_204"); // Fast & lightweight URL
   int code = http.GET();
   http.end();
@@ -66,22 +70,29 @@ char remoteConnCheck(void){
   return code; // 204 means success, no content
 }
 
+/**
+  Sends a GET request to a given URL and returns the server response
+ */
 int getHttpData(char* url, char* outData){
 
   HTTPClient http;
+
+    /*if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("WiFi not connected!");
+    snprintf(result, resultSize, "WiFi error");
+    return -1;
+  }*/
+
+  Serial.printf(" -> Requesting URL: %s \n", url);
 
   http.begin(url);            //Connect to the specified URL
   int httpCode = http.GET();  //Get the server response
   
   if (httpCode <=0) {
     Serial.printf("HTTP GET failed, error: %s\n", http.errorToString(httpCode).c_str());
-    httpCode;
   }
 
-  String payload = http.getString();
-  Serial.println("Received payload:");
-  Serial.println(payload);
-  
+  strcpy(outData, http.getString().c_str());
   http.end(); //Close the HTTP connection
 
   return httpCode;

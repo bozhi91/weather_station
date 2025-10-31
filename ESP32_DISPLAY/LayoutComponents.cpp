@@ -16,7 +16,7 @@ void printText(String text, int pos_x, int pos_y) {
 
   tft->setCursor(pos_x, pos_y);
   tft->setTextColor(COLOR_GREEN);
-  tft->setTextSize(2);
+  tft->setTextSize(1);
   tft->println(text);
 }
 
@@ -210,18 +210,17 @@ void _drawLayoutShape(Shape shape){
 void _drawLayoutLabel(TextLabel item){
 
   static int len = 0;
-  int resize = 3; //text resize
 
   //Delete the previous text before drawing the new one
   if(len != 0){
-    int width  = len*(CHAR_W+1)*resize;
-    int height = (CHAR_H+1)*resize;
+    int width  = len*(CHAR_W+1)*item.size+5;
+    int height = (CHAR_H+1)*item.size;
 
     getDisplayInstance()->fillRoundRect(item.pos_x, item.pos_y, width, height, 5, COLOR_BLACK);
   }
 
   len = strlen(item.label);
-  printTextEx(item.label, resize, item.pos_x, item.pos_y, item.color);
+  printTextEx(item.label, item.size, item.pos_x, item.pos_y, item.color);
 }
 
 /**

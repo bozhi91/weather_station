@@ -2,7 +2,6 @@
 #ifndef __API__
 #define __API__
 
-  
     typedef struct {
         char ssid[30];
         char pass[30];
@@ -22,20 +21,19 @@
     }Current_weather;
 
     typedef struct {
-        /*int year;
-        int month;
-        int day;
-        int hour;
-        int minute;
-        int seconds;*/
         char date[12];
-        char time[6];
-        char timezone[30];
-        char weekday[12];
+        char time[12];
     } DateTime; 
 
+    typedef struct{
+        char timezone;      //currnet timezone shift relavive to the UTC.(+/-)1,2,3
+        char timeFormat;    //12/24 time format. 0:24, 1:12
+        char dateFormat;    //0: dd/mm/yyy
+
+    }DateTime_Cfg;
+
     void readWeatherAPI(Current_weather* current);
-    void readTimeAPI(DateTime* result);
+    void readTimeAPI(DateTime* date);
     
     int loadConfig(void);
     void getConfig(Config* conf);

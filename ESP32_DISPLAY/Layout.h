@@ -8,6 +8,7 @@
 
         unsigned char  pos_x;
         unsigned char  pos_y;
+        char           size;
         unsigned short color;
         char     label[100];
         unsigned char  val_len;
@@ -58,9 +59,19 @@
         LAB_TRANSMITTER,
     }LABEL_ALIAS;
 
+
+    typedef struct{
+        void (*ev_ptr)(void);    //Function pointer to the event
+        unsigned long timeout;   //Call the event every X milliseconds
+        unsigned long last_call; //Ellapsed time since the last call of the event                
+    }Event;
+
     //Defines the layout's template. A layout may have a different components of a different type
     typedef struct {
+
         ELEMENT_TYPES type;
+        Event event;
+
         union {
             TextLabel text;
             Image     bmp;
