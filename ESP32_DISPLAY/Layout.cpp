@@ -14,9 +14,9 @@
 //This array holds all the available layouts. Any new layout should be placed here.
 //The layout view/controller definition goes to its corresponding .cpp file 
 LayoutList myLayoutList[] = {
-
-    {  _viewHomeLayout, _controllHomeLayout  },
-    {  _viewInfoLayout, _controllInfoLayout  }
+  {  _viewHomeLayout,    _ctrlHomeLayout    },
+  {  _viewInfoLayout,    _ctrlInfoLayout    },
+  {  _viewBootScrLayout, 0 },
 };
 
 static int currentLayoutId = 0;
@@ -41,7 +41,6 @@ int getCurrentLayout(void){
 void callLayoutController(void){
   myLayoutList[currentLayoutId].layoutCtrl();
 }
-
 
 //Layout manager. Loads layout(by a given template) to the screen
 void loadLayout(LayoutTemplate* layout, int size, int clrScr){

@@ -5,34 +5,8 @@
 #include "MemoryCard.h"
 #include "hardware.h"
 #include "Layout.h"
+#include "evManager.h"
 #include "LayoutComponents.h"
-
-static void bootScreen(void);
-
-static void bootScreen(void){
-
-  Serial.printf("     ██████████  █████████  ███████████      ████████   ████████  \n");
-  Serial.printf("    ░░███░░░░░█ ███░░░░░███░░███░░░░░███    ███░░░░███ ███░░░░███ \n");
-  Serial.printf("     ░███  █ ░ ░███    ░░░  ░███    ░███   ░░░    ░███░░░    ░███ \n");
-  Serial.printf("     ░██████   ░░█████████  ░██████████       ██████░    ███████  \n");
-  Serial.printf("     ░███░░█    ░░░░░░░░███ ░███░░░░░░       ░░░░░░███  ███░░░░   \n");
-  Serial.printf("     ░███ ░   █ ███    ░███ ░███            ███   ░███ ███      █ \n");
-  Serial.printf("     ██████████░░█████████  █████          ░░████████ ░██████████ \n");
-  Serial.printf("    ░░░░░░░░░░  ░░░░░░░░░  ░░░░░            ░░░░░░░░  ░░░░░░░░░  \n");
-    
-
-  Serial.printf(" \n\n\n ========== ESP32 WEATHER STATION ========== \n\n");
-  Serial.println("Copyright: Bozhidar, 05/2025. Ver: 1.0");
-  Serial.printf("Compilation: %s, %s \n\n",__DATE__, __TIME__);
-  Serial.printf("-------------------------------------------------------------------\n");
-
-  printCpuInfo();
-  Serial.println(">>> Booting..... \n");
-  
-  // Sleep for 10 seconds (10,000,000 microseconds)
-  //esp_sleep_enable_timer_wakeup(10 * 1000000);
-  //esp_deep_sleep_start();
-}
 
 void setup() {
   
@@ -43,6 +17,8 @@ void setup() {
 
   /** INITIALIZE PERIPHERAL DEVICES ***/
   initDisplay();  //Install and configure the display
+  setCurrentLayout(LAYOUT_BOOT_SCREEN);
+
   initSDCard();   //Install the SD card driver
   
   if(sd_Status()<0){
@@ -50,18 +26,24 @@ void setup() {
     halt();
   }
   
-  //Initialize the graphic components
-  setCurrentLayout(LAYOUT_INFO);
+  loadDeviceConfig(); //Loads the device config from a JSON file
 
-  loadConfig(); //Loads the device config from a JSON file
-  initWifi();   //Initialize the wifi module
+  //Initialize the wifi module
+  /*if(initWifi() != 2){
+    msgBox("CONNECTION PROBLEM", TYPE_ERROR);
+    halt();
+  }*/
+
+  setCurrentLayout(LAYOUT_INFO);    
 }
 
 void loop() {
 
   static int progress = 0;
   
+  eventManager();
   callLayoutController();
+
   delay(200);
 
 /*

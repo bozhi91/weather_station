@@ -3,6 +3,7 @@
 #define __LAYOUT_H__
     
     #include <cstddef>
+    #include "evManager.h"
 
     typedef struct __attribute__((packed)){
 
@@ -59,13 +60,6 @@
         LAB_TRANSMITTER,
     }LABEL_ALIAS;
 
-
-    typedef struct{
-        void (*ev_ptr)(void);    //Function pointer to the event
-        unsigned long timeout;   //Call the event every X milliseconds
-        unsigned long last_call; //Ellapsed time since the last call of the event                
-    }Event;
-
     //Defines the layout's template. A layout may have a different components of a different type
     typedef struct {
 
@@ -87,6 +81,7 @@
     typedef enum{
         LAYOUT_HOME,
         LAYOUT_INFO,
+        LAYOUT_BOOT_SCREEN
     }LAYOUT_LIST;
 
     //Layout list template. Used to access the layout view and controller

@@ -191,10 +191,7 @@ void drawToCanvas(GFXcanvas16& canvas_id, int16_t x, int16_t y, const uint16_t b
   getCanvas()->drawRGBBitmap(x, y, bitmap, w, h);
 }
 
-
-
 /************************ GUI FUNCTIONS ********************************/
-
 
 void _drawLayoutBMP(Image bmp){
   drawMonochromeBitmap(bmp.pos_x, bmp.pos_y, bmp.width, bmp.height, bmp.bitmap, sizeof(bmp.size), bmp.color, COLOR_BLACK);

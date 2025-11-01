@@ -2,10 +2,12 @@
 #ifndef __WIFI_MODULE__
 #define __WIFI_MODULE__
 
+    #define WIFI_CONN_TIMEOUT   10000
 
-    void initWifi(void);
+    int initWifi(void);
     char remoteConnCheck(void);
     int getHttpData(char* url, char* outData);
     int getConnStatus(void);
+    void getNetworkInfo(void);
 
 #endif

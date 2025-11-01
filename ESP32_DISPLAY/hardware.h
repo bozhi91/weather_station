@@ -13,5 +13,6 @@
 
     void printCpuInfo(void);
     void halt(void);
+    void bootScreen(void);
 
 #endif

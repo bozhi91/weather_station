@@ -29,6 +29,31 @@ const char* RESET_TABLE[] = {
     "Reset due to CPU lock up (double exception)"
   };
 
+void bootScreen(void){
+
+  Serial.printf("     ██████████  █████████  ███████████      ████████   ████████  \n");
+  Serial.printf("    ░░███░░░░░█ ███░░░░░███░░███░░░░░███    ███░░░░███ ███░░░░███ \n");
+  Serial.printf("     ░███  █ ░ ░███    ░░░  ░███    ░███   ░░░    ░███░░░    ░███ \n");
+  Serial.printf("     ░██████   ░░█████████  ░██████████       ██████░    ███████  \n");
+  Serial.printf("     ░███░░█    ░░░░░░░░███ ░███░░░░░░       ░░░░░░███  ███░░░░   \n");
+  Serial.printf("     ░███ ░   █ ███    ░███ ░███            ███   ░███ ███      █ \n");
+  Serial.printf("     ██████████░░█████████  █████          ░░████████ ░██████████ \n");
+  Serial.printf("    ░░░░░░░░░░  ░░░░░░░░░  ░░░░░            ░░░░░░░░  ░░░░░░░░░  \n");
+
+
+  Serial.printf(" \n\n\n ========== ESP32 WEATHER STATION ========== \n\n");
+  Serial.println("Copyright: Bozhidar, 05/2025. Ver: 1.0");
+  Serial.printf("Compilation: %s, %s \n\n",__DATE__, __TIME__);
+  Serial.printf("-------------------------------------------------------------------\n");
+
+  printCpuInfo();
+  Serial.println(">>> Booting..... \n");
+
+  // Sleep for 10 seconds (10,000,000 microseconds)
+  //esp_sleep_enable_timer_wakeup(10 * 1000000);
+  //esp_deep_sleep_start();
+}
+
 /*Called after a critical system failure.
 For a sequrity reasons, the cpu will be halted
 */

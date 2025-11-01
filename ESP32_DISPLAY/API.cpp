@@ -10,22 +10,27 @@
 //https://randomnerdtutorials.com/esp32-http-get-post-arduino/
 
 static Config config;
-static DateTime_Cfg date_time_cfg = { 1, 0, 0 }; //TODO: load this config from the JSON file
 
-void getConfig(Config* conf){
+void getDeviceConfig(Config* conf){
   *conf = config;
 }
 
 /**
   Load device configuration from the json file.
 */
-int loadConfig(void){
+int loadDeviceConfig(void){
   
     unsigned char json_buffer[512];
     unsigned long size = 0;
 
     memset(json_buffer, 0, sizeof(json_buffer));
-    fread("/config.json", json_buffer, &size, 0);
+    memset(&config, 0, sizeof config);
+
+    int fd = fread("/config.json", json_buffer, &size, 0);
+
+    if(fd!=0){
+      Serial.println("File read error");
+    }
 
     StaticJsonDocument<256> doc;
     DeserializationError error = deserializeJson(doc, json_buffer);
@@ -39,17 +44,20 @@ int loadConfig(void){
     //Copy strings safely
     strlcpy(config.ssid, doc["ssid"] | "", sizeof(config.ssid));
     strlcpy(config.pass, doc["pass"] | "", sizeof(config.pass));
-    
-    /*strlcpy(config.lang, doc["lang"] | "", sizeof(config.lang));
-    strlcpy(config.timezone, doc["timezone"] | "", sizeof(config.timezone));
+    strlcpy(config.lang, doc["lang"] | "", sizeof(config.lang));
 
-    // Copy integers and chars
-    config.refresh_time = doc["refresh_time"] | 0;
-    config.time_format = doc["time_format"] | 12;
+    config.timezone    = doc["timezone"];    // 1 -> UTC+1 i.e. Spanish time 
+    config.time_format = doc["time_format"]; // 21/24 hour format -> hh:mm 
+    config.date_format = doc["date_format"]; // 0  -> dd/mm/yyyy; 1
+   
+    String tmp =  doc["temp_units"];
+    config.temp_units = tmp.c_str()[0];
+   // config.temp_units = doc["temp_units"][0];  
 
-    const char* temp = doc["temp_units"] | "C";
-    config.temp_units = temp[0];  // Only first character (e.g. 'C')
-    */
+    Serial.printf("--> timezone: %d \n", config.timezone );
+    Serial.printf("--> time_format: %d \n", config.time_format );
+    Serial.printf("--> date_format: %d \n", config.date_format );
+    Serial.printf("--> temp_units: %c \n", config.temp_units );
 
   return 0;
 }
@@ -61,20 +69,29 @@ int loadConfig(void){
     The date/time is formatted acording the
 */
 void readTimeAPI(DateTime* date){
-
+  
+  char aux[2];
+  int h;
   char response[64];
   char* timeAPI = "https://r1-api.dotdigital.com/v2/server-time";
   //"https://timeapi.io/api/time/current/zone?timeZone=Europe%2FMadrid";
 
   getHttpData(timeAPI, response);
-  Serial.printf("API Response: [%s]", response);
+  Serial.printf(" Time API Response: [%s]", response);
 
-  //TODO: Need to format and validate the datra properly. Apply the corresponding timezone, etc.
+  //Format the received time and date accodring the stored time/date format and timezone
+  aux[0] = response[12];
+  aux[1] = response[13];
+  h = atoi(aux);
+  h = (h+config.timezone==24) ? 0 : h+config.timezone;
 
-  memcpy(date->date, &response[1], 10);
-  memcpy(date->time, &response[12], 8);
+  sprintf(date->time, "%02d:%c%c",h,response[15],response[16]);
+  sprintf(date->date, "%c%c/%c%c/%c%c%c%c", 
+          response[9], response[10], 
+          response[6], response[7], 
+          response[1],response[2],response[3],response[4] );
 
-  //date->time[1]+=date_time_cfg.timezone;
+  Serial.printf("date: %s|%s \n", date->date, date->time);
 
 }
 

@@ -7,7 +7,13 @@
 #include "LayoutComponents.h"
 #include "API.h"
 
-static unsigned char wifi_status = 0;
+static unsigned char conn_status = 0;
+
+static char* str_conn_status[] = {
+  "NOT CONNECTED",
+  "CONNECTED TO WIFI AP",
+  "CONNECTED TO INTERNET"
+};
 
 /**
   Initialize the WIFI module.
@@ -15,45 +21,56 @@ static unsigned char wifi_status = 0;
 
   TODO: Get the external ip address and the current country/region/city
 */
-void initWifi(void){
+int initWifi(void){
 
-  const char* ssid     = "";
-  const char* password = "";
   unsigned long timer  = millis();
   Config conf;
 
-  getConfig(&conf);
-  wifi_status = 0;
+  getDeviceConfig(&conf);
+  conn_status = 0;
 
-  Serial.printf(" \n- Initializing WIFI module. Connecting to: %s \n", conf.ssid);
+  Serial.printf(" \n- Initializing WIFI module. Connecting to AP: %s.... ", conf.ssid);
 
   //Initialize wifi module and connect to the specified Access Point
+  WiFi.mode(WIFI_STA);               // Station mode
   WiFi.begin(conf.ssid, conf.pass);
 
-  //Wait until we're connected to the Wifi AP or a 5s timeout has passed
-  while(WiFi.status() != WL_CONNECTED && ((millis() - timer) < 10000));
-
-  if(WiFi.status() != WL_CONNECTED){    
-    msgBox("CONNECTION PROBLEM ", TYPE_ERROR);
-    Serial.printf("\t [ FAILED ] \n");
-    return;
+  //Wait until we're connected to the Wifi AP or a 10s timeout has passed
+  while (WiFi.status() != WL_CONNECTED && (millis() - timer < WIFI_CONN_TIMEOUT)) {
+    delay(100);
   }
-  wifi_status = 1;
+
+  if (WiFi.status() == WL_CONNECTED) {
+    Serial.printf("\t[ CONNECTED ]\n");
+    conn_status = 1;
+  } 
+  else {
+    Serial.printf("\t[ TIMEOUT ]\n");
+    return conn_status;
+  }
 
   //Verify if we have an Internet connection and get the local IP
-  String ip = WiFi.localIP().toString();
+  //String ip = WiFi.localIP().toString();
+  remoteConnCheck();
 
-  char code = remoteConnCheck();
-  Serial.printf("Local IP: %s. Internet connection: %s \n", ip.c_str(), (code == 204) ? "YES":"NO");
+  //Serial.printf("Local IP: %s. Internet connection: %s \n", ip.c_str(), (conn_status == 2) ? "YES":"NO");
+  getNetworkInfo();
 
-  //We're connected to the internet
-  if(code == 204){
-    wifi_status = 2;
-  }
+  return conn_status;
 }
 
-int getConnStatus(void){
-  return wifi_status;
+void getNetworkInfo(void){
+
+  Serial.printf("\n\n ===== DEVICE NETWORK INFO =====\n");
+
+  Serial.printf(" - Connection status: %s \n", str_conn_status[conn_status]);
+  Serial.printf(" - Connected to: %s\n", WiFi.SSID().c_str());
+  Serial.printf(" - Local IP: %s \n", WiFi.localIP().toString());
+  Serial.printf(" - Gateway: %s \n", WiFi.gatewayIP().toString());
+  Serial.printf(" - MAC: %s \n", WiFi.macAddress().c_str());
+  //Serial.printf(" - Signal (RSSI): %s", WiFi.RSSI());
+
+   Serial.printf("\n\n");  
 }
 
 /*
@@ -61,12 +78,16 @@ int getConnStatus(void){
 */
 char remoteConnCheck(void){
 
-  HTTPClient http;
+  int code = 0;
+  char response[128];
+  char* conn_url = "http://clients3.google.com/generate_204";
 
-  http.begin("http://clients3.google.com/generate_204"); // Fast & lightweight URL
-  int code = http.GET();
-  http.end();
+  code = getHttpData(conn_url, response);
 
+  //We're connected to the internet
+  if(code == 204){
+    conn_status = 2;
+  }
   return code; // 204 means success, no content
 }
 
@@ -77,18 +98,18 @@ int getHttpData(char* url, char* outData){
 
   HTTPClient http;
 
-    /*if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("WiFi not connected!");
-    snprintf(result, resultSize, "WiFi error");
+  //IF the device is not connected to any device, there's no point of checking the URL
+  if(conn_status == 0) {
+    Serial.printf("Unable to connect to the URL: %s. No Internet connection! \n", url);
     return -1;
-  }*/
+  }
 
-  Serial.printf(" -> Requesting URL: %s \n", url);
-
+  Serial.printf("\n Requesting URL: [%s] ", url);
   http.begin(url);            //Connect to the specified URL
   int httpCode = http.GET();  //Get the server response
   
-  if (httpCode <=0) {
+  Serial.printf(" | Response: %d \n", httpCode);
+  if (httpCode<=0) {
     Serial.printf("HTTP GET failed, error: %s\n", http.errorToString(httpCode).c_str());
   }
 
@@ -96,4 +117,15 @@ int getHttpData(char* url, char* outData){
   http.end(); //Close the HTTP connection
 
   return httpCode;
+}
+
+/**
+  Returns the current connection status:
+
+  0: Not connected
+  1: Connected to the wifi router
+  2: Connected to the Internet
+ */
+int getConnStatus(void){
+  return conn_status;
 }
