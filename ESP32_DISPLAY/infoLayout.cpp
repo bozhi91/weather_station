@@ -1,4 +1,4 @@
- 
+
 #include "API.h"
 #include "infoLayout.h"
 #include "Layout.h"
@@ -7,13 +7,11 @@
 #include "Wifi_Module.h"
 #include "evManager.h"
 
-
-    /*Image icons_list[] = {
-      { 50,  20, 12,  11, bmp_warning, sizeof(bmp_warning), Display_Color_Green },
-      { 90,  20, 15,  12, antena,      sizeof(antena),      Display_Color_Red   },
-      { 130, 20, 14,  8,  battery,     sizeof(battery),     Display_Color_Blue  },
-    };*/
-
+  /*Image icons_list[] = {
+    { 50,  20, 12,  11, bmp_warning, sizeof(bmp_warning), Display_Color_Green },
+    { 90,  20, 15,  12, antena,      sizeof(antena),      Display_Color_Red   },
+    { 130, 20, 14,  8,  battery,     sizeof(battery),     Display_Color_Blue  },
+  };*/
 
 static void displayTime(void);
 static void blink(void);
@@ -30,14 +28,20 @@ LayoutTemplate BootScreen[] = {
 
 LayoutTemplate InfoScreen[] = {
 
-  { .type  = TYPE_RECTANGLE, .event = { 0, 0 }, .shape = { 10,  10, 200, 50, Display_Color_Red  } },
-  { .type  = TYPE_RECTANGLE, .event = { 0, 0 }, .shape = { 220, 10, 200, 50, Display_Color_Blue } },
+ // { .type  = TYPE_RECTANGLE, .event = { 0, 0 }, .shape = { 10,  10, 200, 50, Display_Color_Red  } },
+  //{ .type  = TYPE_RECTANGLE, .event = { 0, 0 }, .shape = { 220, 10, 200, 50, Display_Color_Blue } },
 
-  { .type  = TYPE_BITMAP,    .event = { 0, 0 },        .bmp = { 50, 30, 12, 11, bmp_warning, sizeof(bmp_warning), Display_Color_Green } },
+  { .type   = TYPE_WEATHER_WIDGED, .event  = { 0, 0 },
+    .widged = { "Weekly forecast" ,10, 130, DISPLAY_WIDTH-20, 170, Display_Color_Blue }
+},
+
+
+/*  { .type  = TYPE_BITMAP,    .event = { 0, 0 },     .bmp = { 50, 30, 12, 11, bmp_warning, sizeof(bmp_warning), Display_Color_Green } },
   { .type  = TYPE_BITMAP,    .event = { blink, 1000 }, .bmp = { 70, 30, 15, 12, antena,      sizeof(antena), Display_Color_Red   } },
   { .type  = TYPE_BITMAP,    .event = { 0, 0        }, .bmp = { 90, 30, 14, 8,  battery,     sizeof(battery), Display_Color_Blue } },
 
   { .type  = TYPE_LABEL,     .event = { displayTime, 60000 }, .text = { 100, 100, 2, Display_Color_Red, "Date/Time", 0 } },
+  */
 };
 
 void _viewBootScrLayout(void){
@@ -50,15 +54,27 @@ void _viewInfoLayout(void){
 
   size_t count = sizeof(InfoScreen) / sizeof(InfoScreen[0]);
   loadLayout(InfoScreen, count, 1);
+
+  //Get current time from an external server
+  //readTimeAPI();
+
+  //Get the weather condition from the Weather API and display the current weather
+  Weather_Data forecast[5];
+
+  memset(&forecast, 0, sizeof forecast);
+  readWeatherAPI(forecast, 4);
+  int x=30;
+
+  for(int i=0;i<4;i++){
+    displayWeatherIcon(&forecast[i], x, 150);
+    x+=CANVAS_W+10;
+  }
 }
 
 void _ctrlInfoLayout(void){
 
   size_t size = sizeof(InfoScreen) / sizeof(InfoScreen[0]);
   evLayout(InfoScreen, size);
-
-
-
 }
 
 static void displayTime(void){
@@ -97,10 +113,9 @@ static void blink(void){
   }
 }
 
-
 //Display the layout components on screen
 void _viewHomeLayout(void){
-  
+
   /*size_t count = sizeof(HomeScreen) / sizeof(HomeScreen[0]);
   loadLayout(HomeScreen, count, 1);*/
 }
@@ -109,7 +124,6 @@ void _viewHomeLayout(void){
 void _ctrlHomeLayout(void){
 
   /*unsigned long tim = millis();
-
   sprintf(HomeScreen[0].text.label, "Uptime: %ld ms", tim);
   loadLayout(&HomeScreen[0], 1, 0);
 */

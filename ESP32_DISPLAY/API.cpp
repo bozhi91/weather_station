@@ -1,6 +1,8 @@
 
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
+#include <math.h>
+
 #include "API.h"
 #include "display.h"
 #include "MemoryCard.h"
@@ -31,6 +33,8 @@ int loadDeviceConfig(void){
     if(fd!=0){
       Serial.println("File read error");
     }
+
+    Serial.printf("Content: %s ",json_buffer);
 
     StaticJsonDocument<256> doc;
     DeserializationError error = deserializeJson(doc, json_buffer);
@@ -74,7 +78,6 @@ void readTimeAPI(DateTime* date){
   int h;
   char response[64];
   char* timeAPI = "https://r1-api.dotdigital.com/v2/server-time";
-  //"https://timeapi.io/api/time/current/zone?timeZone=Europe%2FMadrid";
 
   getHttpData(timeAPI, response);
   Serial.printf(" Time API Response: [%s]", response);
@@ -95,103 +98,66 @@ void readTimeAPI(DateTime* date){
 
 }
 
-void readWeatherAPI(Current_weather* current){
+void readWeatherAPI(Weather_Data* forecast, int size){
 
-  //https://open-meteo.com/en/docs
-  //https://www.weatherapi.com/docs/
-  //condition codes: https://www.weatherapi.com/docs/conditions.json
-  //https://api.weatherapi.com/v1/forecast.json?key=86a605c5ebbd4c40a09135726210410&q=Barcelona&lang=en&dt=2025-06-14
-  //const char* API_KEY = "milkulGrUGbG3q0idvGoMape8x0c9ARp"; //ACUWEATHER API KEY
+  char* WEATHER_API = "https://www.meteosource.com/api/v1/free/point?place_id=";
+  char* location    = "barcelona";
+  char* query       = "&sections=daily,current&language=en&units=metric&key=";
+  char* API_KEY     = "pi2hnter7xd66ujysijpn5g9jfl4s37ayp6v4yx2";
 
-  char* API_URL = "https://api.weatherapi.com/v1/forecast.json?key=86a605c5ebbd4c40a09135726210410&q=Barcelona&lang=en&dt=2025-06-";
-  char url[256];
+  char API_URL[256];
+  char *json_data;
+  int httpCode = 0;
 
-   Serial.println(" -> Requesting weather API...");
+  json_data = (char*)malloc(8192);
 
-  sprintf(url, "%s%s", API_URL,current->date);
+  memset(json_data, 0, sizeof json_data);
+  sprintf(API_URL, "%s%s%s%s",WEATHER_API, location, query, API_KEY);
+  Serial.println(" -> Requesting weather API data... ");
 
-  HTTPClient http;
-  http.begin(url);
+  httpCode = getHttpData(API_URL, json_data);
 
-  int httpCode = http.GET();
-
-  if (httpCode <= 0) {
-    Serial.printf("HTTP GET failed, error: %s\n", http.errorToString(httpCode).c_str());
+  if (httpCode != HTTP_CODE_OK) {
+    Serial.printf(" ERROR! HTTP Code: %d \n", httpCode);
     return;
   }
 
-  String payload = http.getString();
-  Serial.printf("payload: %s \n ", payload);
+  //Parse the json data
 
-  // Allocate JSON buffer
   const size_t capacity = JSON_OBJECT_SIZE(2) + JSON_OBJECT_SIZE(4) + JSON_OBJECT_SIZE(10) + 600;
   DynamicJsonDocument doc(capacity);
-  DeserializationError error = deserializeJson(doc, payload);
+  DeserializationError error = deserializeJson(doc, json_data);
 
-  if (error) {
-
+  if(error){
     Serial.print("deserializeJson() failed: ");
     Serial.println(error.f_str());
     return;
   }
 
-  http.end();
+  float max_temp = 0;
+  float min_temp = 0;
 
-    float max_temp = doc["forecast"]["forecastday"][0]["day"]["maxtemp_c"];
-    float min_temp = doc["forecast"]["forecastday"][0]["day"]["mintemp_c"];
+  for(int i=0;i<size; i++){
+
+    max_temp = doc["daily"]["data"][i]["all_day"]["temperature_max"];
+    min_temp = doc["daily"]["data"][i]["all_day"]["temperature_min"];
+
+    forecast[i].max_temp = (int)ceil(max_temp);
+    forecast[i].min_temp = (int)ceil(min_temp);
+    forecast[i].icon_id  = doc["daily"]["data"][i]["icon"];
+
     char date[12];
+    strcpy(date, doc["daily"]["data"][i]["day"]);
+    strncpy(forecast[i].summary, doc["daily"]["data"][i]["summary"], sizeof forecast[i].summary);
+    memcpy(forecast[i].date,     &date[5], 5);
 
-    strcpy(date, doc["forecast"]["forecastday"][0]["date"]);
-    memset(current->date, 0, 5);
+    Serial.printf("Temperature: %d|%d°C | icon: %d | date: %s | %s \n\n",
+                  forecast[i].max_temp, forecast[i].min_temp,
+                  forecast[i].icon_id,  forecast[i].date,
+                  forecast[i].summary);
+  }
 
-    current->max_temp = (int)max_temp;
-    current->min_temp = (int)min_temp;
-    current->cond_id  =  doc["forecast"]["forecastday"][0]["day"]["condition"]["code"];
-    memcpy(current->date, &date[5], 5);
-    current->date[6] = '\0';
-
-    Serial.printf("Current date; %s \n",current->date);
-
-   /*char tmp[50];
-
-    float tempC   = doc["current"]["temp_c"];
-    float windKph = doc["current"]["wind_kph"];
-    int humid     = doc["current"]["humidity"];
-    int press     = doc["current"]["pressure_mb"];
-
-    char data[100];
-    int pos_y = 10;
-
-    strncpy(tmp,  doc["location"]["name"], sizeof(tmp));
-    sprintf(data,"City: %s", tmp);
-    printText(data, 10, pos_y);
-    pos_y+=30;
-
-    sprintf(data, "Temp: %.1f C", tempC);
-    printText(data, 10, pos_y);
-    pos_y+=30;
-
-    sprintf(data, "Humid: %d ", humid);
-    printText(data, 10, pos_y);
-    pos_y+=30;
-
-    sprintf(data, "Press: %d mbar", press);
-    printText(data, 10, pos_y);
-    pos_y+=30;
-
-    sprintf(data, "Wind: %.1f kph", windKph);
-    printText(data, 10, pos_y);
-    pos_y+=30;
-
-    strncpy(tmp,  doc["location"]["localtime"], sizeof(tmp));
-    sprintf(data, "Localtime: %s", tmp);
-    printText(data, 10, pos_y);
-    pos_y+=30;
-
-    strncpy(tmp,  doc["location"]["tz_id"], sizeof(tmp));
-    sprintf(data,"Timezone: %s", tmp);
-    printText(data, 10, pos_y);
-    pos_y+=30;*/
+  free(json_data);
 
       // Print them
      /* Serial.println("====== Weather Info ======");
@@ -207,3 +173,13 @@ void readWeatherAPI(Current_weather* current){
       Serial.println("==========================");*/
 }
 
+int day_of_week(int d, int m, int y) {
+    if (m < 3) {
+        m += 12;
+        y -= 1;
+    }
+    int K = y % 100;
+    int J = y / 100;
+    int h = (d + (13*(m + 1))/5 + K + K/4 + J/4 + 5*J) % 7;
+    return ((h + 6) % 7); // 0=domingo, 1=lunes, ..., 6=sábado
+}

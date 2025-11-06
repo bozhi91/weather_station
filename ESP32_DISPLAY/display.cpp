@@ -8,6 +8,12 @@
 #include "Layout.h"
 #include "LayoutComponents.h"
 
+/**
+   This file implements the low-level display driver functions.
+   All the function related to display configuration, send/receive commands,
+   memory allocation,
+*/
+
 Adafruit_ST7796S_kbv tft = Adafruit_ST7796S_kbv(TFT_CS, TFT_DC, TFT_RST);
 GFXcanvas16 canvas_area(CANVAS_W, CANVAS_H); //100x120x2 = 24 KB
 

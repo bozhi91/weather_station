@@ -14,5 +14,18 @@
     void printCpuInfo(void);
     void halt(void);
     void bootScreen(void);
+    void init_HAL(void);
+    void toggleSPI_Device(int dev_id);
+
+    typedef struct {
+        int device_id;
+        int CS;
+    }SPI_Dev_List;
+
+    typedef enum {
+        LCD_DISPLAY,
+        SD_CARD,
+        TOUCH,
+    }Device_List;
 
 #endif

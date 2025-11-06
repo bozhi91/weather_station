@@ -14,7 +14,8 @@
 //This array holds all the available layouts. Any new layout should be placed here.
 //The layout view/controller definition goes to its corresponding .cpp file 
 LayoutList myLayoutList[] = {
-  {  _viewHomeLayout,    _ctrlHomeLayout    },
+  //{  _viewHomeLayout,    _ctrlHomeLayout    },
+  {0,0},
   {  _viewInfoLayout,    _ctrlInfoLayout    },
   {  _viewBootScrLayout, 0 },
 };
@@ -64,6 +65,10 @@ void loadLayout(LayoutTemplate* layout, int size, int clrScr){
 
       case TYPE_BITMAP:
         _drawLayoutBMP(layout[i].bmp);
+      break;
+
+      case TYPE_WEATHER_WIDGED:
+        _drawWeatherWidged(layout[i].widged);
       break;
     }
   }

@@ -32,7 +32,8 @@
     #define  Display_Color_Yellow   0xFFE0
     #define  Display_Color_White    0xFFFF
     #define  Display_Color_Grey     0x6B6D
-    
+    #define  Color_LGray            0x4208
+
     typedef enum{
       TYPE_NONE,
       TYPE_OK,

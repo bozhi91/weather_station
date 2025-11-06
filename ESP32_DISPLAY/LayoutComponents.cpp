@@ -8,6 +8,46 @@
 #include "png_convert.h"
 #include "MemoryCard.h"
 
+
+/** ========================== BASIC LAYOUT COMPONENTS ========================== */
+
+void _drawLayoutBMP(Image bmp){
+  drawMonochromeBitmap(bmp.pos_x, bmp.pos_y, bmp.width, bmp.height, bmp.bitmap, sizeof(bmp.size), bmp.color, COLOR_BLACK);
+}
+
+/**** DISPLAY THE LAYOUT BASIC COMPONENTS: SHAPE, LABEL, BUTTOM, BITMAP, ETC... *****/
+void _drawLayoutShape(Shape shape){
+  getDisplayInstance()->drawRoundRect(shape.pos_x, shape.pos_y,shape.end_x, shape.end_y, 5, shape.color);
+}
+
+void _drawLayoutLabel(TextLabel item){
+
+  static int len = 0;
+
+  //Delete the previous text before drawing the new one
+  if(len != 0){
+    int width  = len*(CHAR_W+1)*item.size+5;
+    int height = (CHAR_H+1)*item.size;
+
+    getDisplayInstance()->fillRoundRect(item.pos_x, item.pos_y, width, height, 5, COLOR_BLACK);
+  }
+
+  len = strlen(item.label);
+  printTextEx(item.label, item.size, item.pos_x, item.pos_y, item.color);
+}
+
+void _drawWeatherWidged(WeatherWidged widged){
+
+   printTextEx(widged.label, 2, widged.width/3, widged.pos_y-20, Display_Color_White);
+
+  //todo: not implemented yet
+  getDisplayInstance()->drawRoundRect(widged.pos_x, widged.pos_y, widged.width, widged.height, 3, widged.bg_color);
+}
+/** ========================== END OF: BASIC LAYOUT COMPONENTS ========================== */
+
+
+/** ========================== LOW-LEVEL LAYOUT FUNCTIONS ========================== */
+
 /** ================ TEXT FUNCTIONS ================ */
 
 void printText(String text, int pos_x, int pos_y) {
@@ -33,12 +73,12 @@ void printTextEx(String text, int size ,int pos_x, int pos_y, unsigned short col
 /**
   Print a text to the canvas memory. Later, that text will be sent to the video memory
 **/
-void printTextCanvas(GFXcanvas16& canvas_id, String text, int pos_x, int pos_y, unsigned short color) {
+void printTextCanvas(GFXcanvas16* canvas_id, String text, int pos_x, int pos_y, unsigned short color) {
 
-  canvas_id.setCursor(pos_x, pos_y);
-  canvas_id.setTextColor(color);
-  canvas_id.setTextSize(2);
-  canvas_id.println(text);
+  canvas_id->setCursor(pos_x, pos_y);
+  canvas_id->setTextColor(color);
+  canvas_id->setTextSize(2);
+  canvas_id->println(text);
 }
 
 
@@ -55,7 +95,6 @@ void drawRGBLine(const unsigned short buffer[], int start_X, int start_Y, unsign
 }
 
 void display_FillRect(int x, int y, int w, int h, unsigned short color){
-
 }
 
 /** ================ IMAGE FUNCTIONS ================ */
@@ -77,7 +116,7 @@ void drawMonochromeBitmap(
         break; // Stop if we exceed the display width
       }*/
 
-   getDisplayInstance()->drawPixel(x + startX, y + startY, (bitmap[idx] >>i) & 1 ? color : bg_color);
+      getDisplayInstance()->drawPixel(x + startX, y + startY, (bitmap[idx] >>i) & 1 ? color : bg_color);
       y++;
 
       if(y == height){
@@ -91,7 +130,6 @@ void drawMonochromeBitmap(
     }
   }
 }
-
 
 //Draw a multicolor bitmap on the screen using the color format RGB-565
 void drawColorBitmap(const unsigned short image[], int posX, int posY, int sizeX, int sizeY){
@@ -107,42 +145,63 @@ void drawColorBitmap(const unsigned short image[], int posX, int posY, int sizeX
 }
 
 /**
-  Read a PNG file from the SD card and display it on the screen.
+  Read a PNG file from the SD card to a temporary canvas memory.
   The image is converted to RGB565 format since the display works with this color format only.
-
+  Later, the image will be display it on the screen. To do that,
+  use the function: canvasToScreen(canvas_id, x, y);
+  
    @Params:
     - fileName: absolute path to the file. Example: /file.png, /images/file.png
     - at_x/at_y: coordinates of the top-left corner of the image that will be printed on the screen
 */
-void loadPNG( GFXcanvas16& canvas_id, const char* fileName, int at_x, int at_y){
+int loadPNG( GFXcanvas16* canvas_id, const char* fileName, int at_x, int at_y){
 
-  uint16_t rgb565Buffer[320];
-  unsigned char rawFileData[4096];
+  int MAX_FILE_SIZE = 4096;
+  int MAX_IMG_WIGTH = 64;
+  int MAX_BUFF_SIZE = MAX_IMG_WIGTH*sizeof(uint16_t);
+
+  //max icon width: 64pix. 1pix=16bit --> 64x16 = 1024bits = 128Bytes
+  uint16_t rgb565Buffer[MAX_BUFF_SIZE];
   std::vector<unsigned char> rgbaOutput;
-  unsigned long width, height, pngSize=0;
+  unsigned long width, height, pngSize = 0, f_size = 0;
+  unsigned char* rawFileData;
 
+  //Check the file size
+  f_size = getFileSize(fileName);
+
+  if(f_size >= MAX_FILE_SIZE){
+    Serial.printf("ERROR! PNG file is too big: %d Bytes\n", f_size);
+    return -1;
+  }
+
+  //Allocate enough memory to store the file in RAM
+  rawFileData = (unsigned char*)malloc(f_size);
   memset(rgb565Buffer, 0, sizeof rgb565Buffer);
-  memset(rawFileData,  0, sizeof(rawFileData));
+  memset(rawFileData,  0, f_size);
 
   //Read the png binary file and store it to RAM
   fread(fileName, rawFileData, &pngSize, 1);
 
-  //Decode the PNG file to RGB565 format
-  int result = decodePNG(rgbaOutput, width, height, rawFileData, pngSize, 1);
+  //Decode the PNG file to RAW RGB buffer format
+  int result = decodePNG(rgbaOutput, width, height, rawFileData, pngSize, 0);
+
+  free(rawFileData);
 
   if(result != 0){
-    Serial.print(" PNG DECODE ERROR!!!!");
-    return;
+    Serial.printf(" PNG DECODE ERROR! Code: %d \n", result);
+    return result;
   }
+
+  Serial.printf("PNG image decoded to RGB565. Size: %dx%d \n", width, height);
 
   //Convert the RAW PNG Format to RGB565 and display the image on the screen
   //Only one line of the image is stored at the time.
-  //This size has to be greater than the image length.
+  //This size has to be greater than the image width.
   //Serial.printf("draw icon at: %dx%d, size: %dx%d \n\n", at_x, at_y, width, height);
 
-  if(width>320){
-    Serial.printf("image width too big. Aborting");
-    return;
+  if(width > MAX_IMG_WIGTH){
+    Serial.printf("PNG image width too big(w=%d). Max width: %d. Aborting!\n",width, MAX_IMG_WIGTH);
+    return -1;
   }
 
   for (int y = 0; y < height; y++) {
@@ -154,12 +213,41 @@ void loadPNG( GFXcanvas16& canvas_id, const char* fileName, int at_x, int at_y){
         uint8_t b = rgbaOutput[i + 2];
 
         rgb565Buffer[x] = ((r & 0xF8) << 8) | ((g & 0xFC) << 3) |(b >> 3);
+
+        //Remove image background
+        if(rgb565Buffer[x] == 0){
+          rgb565Buffer[x] = Color_LGray;
+        }
     }
 
     //The image is stored into a temporary memory(canvas). 
     //When all the data is written to the temp memory, the canvas data is send to the display
     drawToCanvas(canvas_id, at_x, at_y + y, rgb565Buffer, width, 1);
   }
+
+  return 0;
+}
+
+
+void rgb888_to_rgb565(uint16_t* dest, const uint8_t* src, size_t pixel_count) {
+
+  for (size_t i = 0; i < pixel_count; i++) {
+
+    uint8_t r = src[i * 3 + 0];
+    uint8_t g = src[i * 3 + 1];
+    uint8_t b = src[i * 3 + 2];
+
+    dest[i] = ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3);
+  }
+}
+
+void pack_4bpp(const uint8_t *indices, uint8_t *dest, size_t pixel_count) {
+    size_t di = 0;
+    for (size_t i = 0; i < pixel_count; i += 2) {
+        uint8_t a = indices[i] & 0x0F;
+        uint8_t b = (i+1 < pixel_count) ? (indices[i+1] & 0x0F) : 0;
+        dest[di++] = (a << 4) | b;
+    }
 }
 
 /** ================ CANVAS FUNCTIONS ================ */
@@ -167,8 +255,8 @@ void loadPNG( GFXcanvas16& canvas_id, const char* fileName, int at_x, int at_y){
   Copy the canvas area to the video memory
   @Pre: Create a canvas area and fill it with some data.
 */
-void canvasToScreen(GFXcanvas16& canvas_id, int at_x, int at_y){
-  getDisplayInstance()->drawRGBBitmap(at_x, at_y, canvas_id.getBuffer(), canvas_id.width(), canvas_id.height());
+void canvasToScreen(GFXcanvas16* canvas_id, int at_x, int at_y){
+  getDisplayInstance()->drawRGBBitmap(at_x, at_y, canvas_id->getBuffer(), canvas_id->width(), canvas_id->height());
 }
 
 /**
@@ -180,7 +268,7 @@ void canvasToScreen(GFXcanvas16& canvas_id, int at_x, int at_y){
   - x/y: top-left coordinates of the bitmap in the canvas area.
   - w/h: size of the bitmap in pixels
 */
-void drawToCanvas(GFXcanvas16& canvas_id, int16_t x, int16_t y, const uint16_t bitmap[], int16_t w, int16_t h){
+void drawToCanvas(GFXcanvas16* canvas_id, int16_t x, int16_t y, const uint16_t bitmap[], int16_t w, int16_t h){
 
     /*GFXcanvas16 *canvas = new GFXcanvas16(100, 50);
     // use it
@@ -188,37 +276,13 @@ void drawToCanvas(GFXcanvas16& canvas_id, int16_t x, int16_t y, const uint16_t b
     delete canvas;  // free memory
     */
 
-  getCanvas()->drawRGBBitmap(x, y, bitmap, w, h);
+  canvas_id->drawRGBBitmap(x, y, bitmap, w, h);
 }
 
-/************************ GUI FUNCTIONS ********************************/
-
-void _drawLayoutBMP(Image bmp){
-  drawMonochromeBitmap(bmp.pos_x, bmp.pos_y, bmp.width, bmp.height, bmp.bitmap, sizeof(bmp.size), bmp.color, COLOR_BLACK);
-}
+/** ========================== END OF: LOW-LEVEL LAYOUT FUNCTIONS ========================== */
 
 
-/**** DISPLAY THE LAYOUT BASIC COMPONENTS: SHAPE, LABEL, BUTTOM, BITMAP, ETC... *****/
-void _drawLayoutShape(Shape shape){
-  getDisplayInstance()->drawRoundRect(shape.pos_x, shape.pos_y,shape.end_x, shape.end_y, 5, shape.color);
-}
-
-
-void _drawLayoutLabel(TextLabel item){
-
-  static int len = 0;
-
-  //Delete the previous text before drawing the new one
-  if(len != 0){
-    int width  = len*(CHAR_W+1)*item.size+5;
-    int height = (CHAR_H+1)*item.size;
-
-    getDisplayInstance()->fillRoundRect(item.pos_x, item.pos_y, width, height, 5, COLOR_BLACK);
-  }
-
-  len = strlen(item.label);
-  printTextEx(item.label, item.size, item.pos_x, item.pos_y, item.color);
-}
+/** ========================== HIGH-LEVEL LAYOUT COMPONENTS ========================== */
 
 /**
   Display a text box at coords: 100,100 inside a yeallow frame
@@ -261,78 +325,49 @@ void msgBox(const char* text,  MSG_BOX_TYPES type){
   }
 }
 
-
-/***
+/**************************************************************************
   Display the weather icon with some basic data on the canvas
   then copy the canvas memory to the display memory at given coordinates.
-*/
-void displayIcon(GFXcanvas16& canvas_id, Current_weather* current, int x, int y){
+***************************************************************************/
+void displayWeatherIcon(Weather_Data* forecast, int x, int y){
 
-  Serial.printf(" T: %d, %d, %d \n", current->max_temp, current->min_temp, current->cond_id);
+  GFXcanvas16* canvas_id = getCanvas();
 
   //Display icon frame
-  canvas_id.fillScreen(Display_Color_Black);
-  canvas_id.drawRoundRect(0, 0, CANVAS_W, CANVAS_H-20, 5, Display_Color_Blue);
-  canvas_id.drawLine(10, 80, CANVAS_W-10, 80, Display_Color_Blue);
+  canvas_id->fillScreen(Display_Color_Black); //Clear canvas memory by filling the frame with a given color
+  canvas_id->fillRoundRect(0, 0, CANVAS_W, CANVAS_H-20, 5, Color_LGray);  //Display the canvas frame
+  canvas_id->drawLine(10, 80, CANVAS_W-10, 80, Display_Color_Blue);       // Draw a separate line
 
-  char icon_name[20];
+  char icon_name[64];
   char data_buff[10];
 
-  //Load and display the icon
-  switch(current->cond_id){
+  sprintf(icon_name, "/resources/default_icons/storm_1.png", 15);
 
-    case 1000:
-      strcpy(icon_name, "/sunny.png");
-    break;
+  //Load a PNG image file from the SD card
+  int result = loadPNG(canvas_id, icon_name, CANVAS_W/2-32, 10);
 
-    case 1003:
-      strcpy(icon_name, "/part_cloud.png");
-    break;
-
-    case 1006:
-    case 1009:
-      strcpy(icon_name, "/cloudy_2.png");
-    break;
-
-    case 1030:
-    case 1135:
-    case 1147:
-      strcpy(icon_name, "/fog?@.png");
-    break;
-
-    case 1063:
-    case 1180:
-    case 1183:
-    case 1186:
-    case 1189:
-    case 1192:
-    case 1195:
-      strcpy(icon_name, "/rain_3.png");
-    break;
-
-    default:
-      strcpy(icon_name, "/part_cloud.png");
+  if(result != 0){
+    Serial.printf(" PNG Convert error: %d \n", result);
+    return;
   }
-
-  loadPNG(canvas_id, icon_name, CANVAS_W/2-32, 10);
 
   //Display the weather data: temp(min/max), day of the week
   memset(data_buff, 0, sizeof data_buff);
-  sprintf(data_buff,"%dC|%dC", current->max_temp, current->min_temp);
+  sprintf(data_buff,"%dC|%dC", forecast->max_temp, forecast->min_temp);
   printTextCanvas(canvas_id, data_buff, 5, 90, COLOR_YELLOW);
 
-  //Display day of the week
+  //Display the date
   memset(data_buff, 0, sizeof data_buff);
-  sprintf(data_buff,"%s", current->date);
+  sprintf(data_buff,"%s", forecast->date);
   printTextCanvas(canvas_id, data_buff, CANVAS_W/2-32, 125, COLOR_WHITE);
 
   //Copy canvas memory to screen
   canvasToScreen(canvas_id, x, y);
 }
 
-
 void displayToolbar(Image iconList[]){
-/*
+
+  /*
   int toolbar_y = 0;
   int toolbar_h = 40;
 

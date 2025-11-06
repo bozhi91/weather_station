@@ -54,6 +54,12 @@ void bootScreen(void){
   //esp_deep_sleep_start();
 }
 
+static SPI_Dev_List spi_devs[] = {
+  { DISPLAY, SD_CS  },
+  { SD_CARD, TFT_CS }
+};
+
+
 /*Called after a critical system failure.
 For a sequrity reasons, the cpu will be halted
 */
@@ -65,6 +71,28 @@ void halt(void){
   }
 }
 
+void toggleSPI_Device(int dev_id){
+
+  int size = sizeof(SPI_Dev_List)/sizeof(spi_devs[0]);
+
+  //Disable all the SPI devices except the one we want to communicate with.
+  //By setting the CS pin to HIGH, we disable the device. CS_LOW will enable it.
+  for(int i=0; i<size; i++){
+     digitalWrite(spi_devs[i].CS, spi_devs[i].device_id == dev_id ? 0:1);
+  }
+}
+
+void init_HAL(void){
+
+  pinMode(TFT_CS, OUTPUT);
+  pinMode(SD_CS, OUTPUT);
+
+  digitalWrite(TFT_CS, HIGH);
+  digitalWrite(SD_CS, HIGH);
+}
+
+
+
 void printCpuInfo(void){
 
   Serial.printf(" - Last Reset reason: [ %s ] \n\n", RESET_TABLE[esp_reset_reason()]);
@@ -75,14 +103,13 @@ void printCpuInfo(void){
   }
 
   print_memory_info();
-
   Serial.println("----------------------------------------------------\n");
 }
 
 void print_memory_info(void) {
 
   /****
-    PARTITION TABLE: 
+    PARTITION TABLE:
     - 3MB SKETCH
     - 1MB SPIFFS, NO OTA
   **/
@@ -93,7 +120,6 @@ void print_memory_info(void) {
   Serial.println(" >>>>> Memory info <<<<< \n");
   Serial.printf("- Total free bytes: %d\n", heap_info.total_free_bytes);
   Serial.printf("- Free heap size: %d bytes\n", esp_get_free_heap_size());
-
 
   Serial.printf("- Total Sketch partition size:  %d bytes \n", ESP.getFreeSketchSpace());
   Serial.printf("- Total Flash: %d bytes \n", ESP.getFlashChipSize());
@@ -108,6 +134,7 @@ void print_memory_info(void) {
 
  // ESP.getFreeSketchSpace())
 }
+
 
 /****
 #include <Arduino.h>

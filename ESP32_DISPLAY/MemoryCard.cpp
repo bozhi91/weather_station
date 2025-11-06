@@ -22,6 +22,7 @@
   };
 
 static void sd_listDir(fs::FS &fs, const char *dirname, uint8_t levels);
+void enableSD(bool state);
 
 char initSDCard(void){
 
@@ -69,6 +70,26 @@ int sd_Status(void){
   return sdCardStatus;
 }
 
+int getFileSize(const char *path){
+
+  //toggleSPI_Device(LCD_DISPLAY);
+  toggleDisplay(0);
+
+  File file  = SD.open(path);
+  int f_size = -1;
+
+  if(!file){
+    Serial.printf("Failed to open file : %s \n", path);
+    return -1;
+  }
+
+  f_size = file.size();
+  file.close();
+  toggleDisplay(1);
+
+  return f_size;
+}
+
 /*
   Reads a file as binary from the SD card and store it to a RAM buffer
 
@@ -100,7 +121,7 @@ int fread(const char *path, unsigned char* fileBuffer, unsigned long* fSize, boo
     fileBuffer[fileSize] = '\0';  // Null-terminate
   }
 
-  Serial.printf("File loaded: %s(%d)bytes \n", path, fileSize);  
+  Serial.printf("File loaded: [%s] |  (%d)bytes \n", path, fileSize);
 
   return 0;
 }

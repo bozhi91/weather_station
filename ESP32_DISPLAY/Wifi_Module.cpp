@@ -97,6 +97,7 @@ char remoteConnCheck(void){
 int getHttpData(char* url, char* outData){
 
   HTTPClient http;
+  int httpCode;
 
   //IF the device is not connected to any device, there's no point of checking the URL
   if(conn_status == 0) {
@@ -105,11 +106,11 @@ int getHttpData(char* url, char* outData){
   }
 
   Serial.printf("\n Requesting URL: [%s] ", url);
-  http.begin(url);            //Connect to the specified URL
-  int httpCode = http.GET();  //Get the server response
+  http.begin(url);        //Connect to the specified URL
+  httpCode = http.GET();  //Get the server response
   
   Serial.printf(" | Response: %d \n", httpCode);
-  if (httpCode<=0) {
+  if(httpCode<=0) {
     Serial.printf("HTTP GET failed, error: %s\n", http.errorToString(httpCode).c_str());
   }
 

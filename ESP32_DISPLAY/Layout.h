@@ -35,6 +35,18 @@
         unsigned short color;
     }Image;
 
+
+    typedef struct __attribute__((packed)){
+
+        char label[20];
+        unsigned int pos_x;
+        unsigned int pos_y;
+        unsigned int width;
+        unsigned int height;
+        unsigned short bg_color;
+        Image icons[5];
+    }WeatherWidged;
+
     typedef struct __attribute__((packed)){
 
         unsigned int height;
@@ -51,6 +63,8 @@
         TYPE_LINE,
         TYPE_RECTANGLE,
         TYPE_BUTTON,
+        TYPE_WEATHER_WIDGED,
+
     }ELEMENT_TYPES;
 
     typedef enum{
@@ -67,9 +81,10 @@
         Event event;
 
         union {
-            TextLabel text;
-            Image     bmp;
-            Shape     shape;
+            TextLabel     text;
+            Image         bmp;
+            Shape         shape;
+            WeatherWidged widged;
           //Button    button;
         };
     }LayoutTemplate;

@@ -11,8 +11,8 @@ static void _evTest(void);
 static void _evTest_2(void);
 
 Event eventList[] = {
-  { _evTest,   1000 },
-  { _evTest_2, 2000 },
+  //{ _evTest,   1000 },
+  //{ _evTest_2, 2000 },
 };
 
 static void _evTest(void){
@@ -22,7 +22,7 @@ static void _evTest_2(void){
   Serial.println(" Custom event_2 running...");
 }
 
-//Execute the event function defined in the layout structure template
+//Executes the event function defined in the layout structure template
 void evLayout(void* layout, int size){
 
   LayoutTemplate* lay = (LayoutTemplate*)layout;
@@ -43,23 +43,27 @@ void evLayout(void* layout, int size){
   }
 }
 
+/**
+  The event manager will run global/generic events which are responsible of
+  controlling system processes, peripheral devices and others. 
+*/
 void eventManager(void){
 
-    int size = sizeof(eventList)/sizeof(eventList[0]);
+  int size = sizeof(eventList)/sizeof(eventList[0]);
 
-    //Call certain functions periodically in order to refresh the displayed data
-    for(int i=0; i<size; i++){
+  //Call certain functions periodically in order to refresh the displayed data
+  for(int i=0; i<size; i++){
 
-        if(eventList[i].ev_ptr != NULL && eventList[i].timeout != 0){
+    if(eventList[i].ev_ptr != NULL && eventList[i].timeout != 0){
 
-            if((millis() - eventList[i].last_call > eventList[i].timeout) || eventList[i].last_call==0 ){
-                eventList[i].last_call = millis();
-                eventList[i].ev_ptr();
-            }
-            else if(eventList[i].timeout == 0){ //If no timeout is defined, the function will be called without any delay
-                eventList[i].ev_ptr();
-            }
-        }
+      if((millis() - eventList[i].last_call > eventList[i].timeout) || eventList[i].last_call==0 ){
+        eventList[i].last_call = millis();
+        eventList[i].ev_ptr();
+      }
+      else if(eventList[i].timeout == 0){ //If no timeout is defined, the function will be called without any delay
+        eventList[i].ev_ptr();
+      }
     }
+  }  
 }
 
