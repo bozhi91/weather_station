@@ -16,6 +16,7 @@
     void bootScreen(void);
     void init_HAL(void);
     void toggleSPI_Device(int dev_id);
+    void cfgSysClock(time_t epoch);
 
     typedef struct {
         int device_id;

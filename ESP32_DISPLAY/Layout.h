@@ -43,8 +43,10 @@
         unsigned int pos_y;
         unsigned int width;
         unsigned int height;
+        unsigned short frame_color;
         unsigned short bg_color;
         Image icons[5];
+
     }WeatherWidged;
 
     typedef struct __attribute__((packed)){
@@ -60,6 +62,7 @@
 
         TYPE_LABEL,
         TYPE_BITMAP,
+        TYPE_PNG,
         TYPE_LINE,
         TYPE_RECTANGLE,
         TYPE_BUTTON,
@@ -94,9 +97,10 @@
     
     //List of layout indices. Used as aliases to access the diffent layouts
     typedef enum{
+
+        LAYOUT_BOOT_SCREEN,
         LAYOUT_HOME,
-        LAYOUT_INFO,
-        LAYOUT_BOOT_SCREEN
+        LAYOUT_FORECAST,
     }LAYOUT_LIST;
 
     //Layout list template. Used to access the layout view and controller

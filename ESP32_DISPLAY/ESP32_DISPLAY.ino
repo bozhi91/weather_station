@@ -8,6 +8,8 @@
 #include "evManager.h"
 #include "LayoutComponents.h"
 
+#include "time.h"
+
 void setup() {
 
   init_HAL();
@@ -37,14 +39,11 @@ void setup() {
     msgBox("CONNECTION PROBLEM", TYPE_ERROR);
     halt();
   }
-
-  setCurrentLayout(LAYOUT_INFO);
+  setCurrentLayout(LAYOUT_FORECAST);
 }
 
 void loop() {
 
-  static int progress = 0;
-  
   //eventManager();
   //callLayoutController();
 

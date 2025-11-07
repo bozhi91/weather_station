@@ -102,7 +102,7 @@ int fread(const char *path, unsigned char* fileBuffer, unsigned long* fSize, boo
   
   toggleDisplay(0);
 
-  File file  = SD.open(path);
+  File file = SD.open(path);
 
   if(!file){
     Serial.printf("Failed to open file : %s \n", path);
@@ -124,6 +124,27 @@ int fread(const char *path, unsigned char* fileBuffer, unsigned long* fSize, boo
   Serial.printf("File loaded: [%s] |  (%d)bytes \n", path, fileSize);
 
   return 0;
+}
+
+
+int fwrite(const char *path, unsigned char* fileBuffer, int nBytes, bool isBinary){
+
+  toggleDisplay(0);
+
+  File file = SD.open(path, FILE_APPEND);
+
+  if(!file){
+    Serial.printf("Failed to open file [%s] for write\n", path);
+    return -1;
+  }
+
+  int written = file.write(fileBuffer, nBytes);
+  file.close();
+  toggleDisplay(1);
+
+  Serial.printf("Written %d bytes to file: [%s] \n", written, path);
+
+  return written;
 }
 
 static void sd_listDir(fs::FS &fs, const char *dirname, uint8_t levels) {

@@ -183,3 +183,17 @@ int day_of_week(int d, int m, int y) {
     int h = (d + (13*(m + 1))/5 + K + K/4 + J/4 + 5*J) % 7;
     return ((h + 6) % 7); // 0=domingo, 1=lunes, ..., 6=sábado
 }
+
+
+void getLocalTime(void){
+
+  time_t epoch = 1762462538;
+  time_t tm = time(NULL);
+  struct tm *t = gmtime(&epoch);
+
+  Serial.printf("tm: %d \n ", tm);
+  Serial.printf("h/m: %02d/%02d \n ", t->tm_hour, t->tm_min);
+
+
+}
+

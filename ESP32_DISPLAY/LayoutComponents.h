@@ -10,8 +10,9 @@
                               const unsigned char* bitmap, int nBytes, unsigned short color,unsigned short bg_color);
 
     void drawColorBitmap(const unsigned short image[],int posX, int posY,int sizeX, int sizeY);
-    int loadPNG( GFXcanvas16* canvas_id, const char* fileName, int at_x, int at_y);
+    int loadPNG(const char* fileName, int at_x, int at_y, unsigned short bg_color);
     void rgb888_to_rgb565(uint16_t* dest, const uint8_t* src, size_t pixel_count);
+    uint8_t rgb565_to_rgb332(uint16_t c);
 
 
     //Shapes functions
@@ -26,14 +27,8 @@
     void printTextEx(String text, int size, int pos_x, int pos_y, unsigned short color);
     void printTextCanvas(GFXcanvas16* canvas_id, String text, int pos_x, int pos_y, unsigned short color);
 
-    //canvas funcitons
-    void drawToCanvas( GFXcanvas16* canvas_id, int16_t x, int16_t y, const uint16_t bitmap[], int16_t w, int16_t h);
-    void canvasToScreen( GFXcanvas16* canvas_id, int at_x, int at_y);
-
-
     //GUI Functions
     void msgBox(const char* text, MSG_BOX_TYPES type);
-
 
     void displayWeatherIcon(Weather_Data* forecast, int x, int y);
     void displayProgressBar(int percent);

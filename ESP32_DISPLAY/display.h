@@ -32,7 +32,8 @@
     #define  Display_Color_Yellow   0xFFE0
     #define  Display_Color_White    0xFFFF
     #define  Display_Color_Grey     0x6B6D
-    #define  Color_LGray            0x4208
+    #define  Color_DGray            0x2104
+    #define  Color_LGray            0xa514
 
     typedef enum{
       TYPE_NONE,
@@ -44,6 +45,10 @@
     void toggleDisplay(bool state);
     GFXcanvas16* getCanvas(void);
     Adafruit_ST7796S_kbv* getDisplayInstance();
+
+    //Canvas funcitons
+    void drawToCanvas(int16_t x, int16_t y, const uint16_t bitmap[], int16_t w, int16_t h);
+    void canvasToScreen(int at_x, int at_y);
 
     //Layout funcitons
     void loadLayout(int id);

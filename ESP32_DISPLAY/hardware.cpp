@@ -59,6 +59,24 @@ static SPI_Dev_List spi_devs[] = {
   { SD_CARD, TFT_CS }
 };
 
+/* ===================  HAL FUNCTIONS DEFINITION BEGIN ===================*/
+
+void init_HAL(void){
+
+  pinMode(TFT_CS, OUTPUT);
+  pinMode(SD_CS, OUTPUT);
+
+  digitalWrite(TFT_CS, HIGH);
+  digitalWrite(SD_CS, HIGH);
+
+  setCpuFrequencyMhz(240);
+}
+
+void cfgSysClock(time_t epoch){
+  struct timeval now = { .tv_sec = epoch, .tv_usec = 0 }; // epoch seconds
+  settimeofday(&now, NULL);
+}
+
 
 /*Called after a critical system failure.
 For a sequrity reasons, the cpu will be halted
@@ -82,15 +100,7 @@ void toggleSPI_Device(int dev_id){
   }
 }
 
-void init_HAL(void){
-
-  pinMode(TFT_CS, OUTPUT);
-  pinMode(SD_CS, OUTPUT);
-
-  digitalWrite(TFT_CS, HIGH);
-  digitalWrite(SD_CS, HIGH);
-}
-
+/* ===================  HAL FUNCTIONS DEFINITION END  ===================*/
 
 
 void printCpuInfo(void){

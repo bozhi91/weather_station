@@ -67,7 +67,7 @@
 
         === TIME APIs ===
 
-       char* timeAPI_2 = "https://timeapi.io/api/time/current/zone?timeZone=Europe%2FMadrid";
+        https://timeapi.io/api/time/current/zone?timeZone=Europe%2FMadrid
     */
 
 #endif

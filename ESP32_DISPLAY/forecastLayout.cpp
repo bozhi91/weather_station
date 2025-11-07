@@ -1,6 +1,6 @@
 
 #include "API.h"
-#include "infoLayout.h"
+#include "forecastLayout.h"
 #include "Layout.h"
 #include "LayoutComponents.h"
 #include "display.h"
@@ -15,33 +15,14 @@
 
 static void displayTime(void);
 static void blink(void);
-/*
-LayoutTemplate HomeScreen[] = {
-  { .type  = TYPE_LABEL, .event = {0, 0}, .text = { 100, 160, 2, Display_Color_Blue, "TEST LABEL 1 - HELLO", 0 } },
-  { .type  = TYPE_LABEL, .event = {0, 0}, .text = { 100, 100, 2, Display_Color_Red,  "TEST LABEL 2 - WORLD", 0 } },
- };
-*/
 
 LayoutTemplate BootScreen[] = {
-  { .type  = TYPE_LABEL, .event = {0, 0}, .text = { 20, 160, 3, Display_Color_White, "Starting up. Please wait...", 0 } },
-};
 
-LayoutTemplate InfoScreen[] = {
-
- // { .type  = TYPE_RECTANGLE, .event = { 0, 0 }, .shape = { 10,  10, 200, 50, Display_Color_Red  } },
-  //{ .type  = TYPE_RECTANGLE, .event = { 0, 0 }, .shape = { 220, 10, 200, 50, Display_Color_Blue } },
-
-  { .type   = TYPE_WEATHER_WIDGED, .event  = { 0, 0 },
-    .widged = { "Weekly forecast" ,10, 130, DISPLAY_WIDTH-20, 170, Display_Color_Blue }
-},
-
-
-/*  { .type  = TYPE_BITMAP,    .event = { 0, 0 },     .bmp = { 50, 30, 12, 11, bmp_warning, sizeof(bmp_warning), Display_Color_Green } },
-  { .type  = TYPE_BITMAP,    .event = { blink, 1000 }, .bmp = { 70, 30, 15, 12, antena,      sizeof(antena), Display_Color_Red   } },
-  { .type  = TYPE_BITMAP,    .event = { 0, 0        }, .bmp = { 90, 30, 14, 8,  battery,     sizeof(battery), Display_Color_Blue } },
-
-  { .type  = TYPE_LABEL,     .event = { displayTime, 60000 }, .text = { 100, 100, 2, Display_Color_Red, "Date/Time", 0 } },
-  */
+  {
+    .type  = TYPE_LABEL,
+    .event = { 0,0 },
+    .text  = { 20, 160, 3, Display_Color_White, "Starting up. Please wait...", 0 }
+  },
 };
 
 void _viewBootScrLayout(void){
@@ -50,13 +31,32 @@ void _viewBootScrLayout(void){
   loadLayout(BootScreen, count, 1);
 }
 
-void _viewInfoLayout(void){
 
-  size_t count = sizeof(InfoScreen) / sizeof(InfoScreen[0]);
-  loadLayout(InfoScreen, count, 1);
+LayoutTemplate ForecastLayout[] = {
+
+  {
+    .type   = TYPE_WEATHER_WIDGED,
+    .event  = { 0, 0 },
+    .widged = { "Weekly forecast" ,10, 130,
+                 DISPLAY_WIDTH-20, 170, Display_Color_Blue, Display_Color_Black, 0 }
+  },
+  {
+    .type  = TYPE_LABEL,
+    .event = { 0,0 },
+    .text  = { 20, 40, 2, Display_Color_White, "Date/Time:", 0 }
+  },
+};
+
+void _viewForecastLayout(void){
+
+  size_t count = sizeof(ForecastLayout) / sizeof(ForecastLayout[0]);
+  loadLayout(ForecastLayout, count, 1);
 
   //Get current time from an external server
   //readTimeAPI();
+
+  //Display time as so: Wed 06 Oct | 13:33
+  displayTime();
 
   //Get the weather condition from the Weather API and display the current weather
   Weather_Data forecast[5];
@@ -71,26 +71,24 @@ void _viewInfoLayout(void){
   }
 }
 
-void _ctrlInfoLayout(void){
+void _ctrlForecastLayout(void){
 
-  size_t size = sizeof(InfoScreen) / sizeof(InfoScreen[0]);
-  evLayout(InfoScreen, size);
+  size_t size = sizeof(ForecastLayout) / sizeof(ForecastLayout[0]);
+  evLayout(ForecastLayout, size);
 }
+
 
 static void displayTime(void){
 
   DateTime date;
 
-  msgBox("- SYSTEM OFFLINE -", TYPE_ERROR);
-  if(getConnStatus()!=2){
-    return;
-  }
   memset(&date, 0, sizeof date);
 
   readTimeAPI(&date);
-  sprintf(InfoScreen[5].text.label, "Date/Time %s | %s", date.date, date.time);
-  _drawLayoutLabel(InfoScreen[5].text);
+  sprintf(ForecastLayout[1].text.label, "Date/Time: %s | %s", date.date, date.time);
+  _drawLayoutLabel(ForecastLayout[1].text);
 }
+
 
 static void _updateToolbar(void){
   //todo: implementation
@@ -99,7 +97,7 @@ static void _updateToolbar(void){
 //Icon blink test
 static void blink(void){
 
-  static int toggle = 0;
+  /*static int toggle = 0;
   int status = getConnStatus();
 
   if(status!=2){
@@ -110,7 +108,7 @@ static void blink(void){
   else{
     InfoScreen[3].bmp.color = Display_Color_Green;
     _drawLayoutBMP(InfoScreen[3].bmp);
-  }
+  }*/
 }
 
 //Display the layout components on screen
